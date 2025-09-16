@@ -33,6 +33,14 @@ Examples:
 func init() {
 	terminateCmd.Flags().BoolVar(&terminateFlags.Force, "force", false, "force termination without confirmation")
 	terminateCmd.Flags().StringVar(&terminateFlags.Timeout, "timeout", "30s", "timeout for termination operation")
+
+	// Set up job ID completion for the first argument
+	terminateCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) == 0 {
+			return jobIDCompletion(cmd, args, toComplete)
+		}
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
 }
 
 func runTerminate(cmd *cobra.Command, args []string) error {

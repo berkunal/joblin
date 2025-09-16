@@ -87,6 +87,11 @@ func init() {
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(cleanupCmd)
 	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(completionCmd)
+
+	// Register completion functions for global flags
+	rootCmd.RegisterFlagCompletionFunc("namespace", namespaceCompletion)
+	rootCmd.RegisterFlagCompletionFunc("log-level", logLevelCompletion)
 }
 
 func initConfig() {

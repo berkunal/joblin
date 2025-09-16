@@ -53,6 +53,32 @@ func init() {
 	listCmd.Flags().StringVar(&listFlags.SortBy, "sort-by", "created", "sort by: name, status, created, started, duration")
 	listCmd.Flags().BoolVar(&listFlags.Reverse, "reverse", false, "reverse sort order")
 	listCmd.Flags().BoolVarP(&listFlags.Wide, "wide", "w", false, "show additional columns")
+
+	// Set up completion for the status flag
+	listCmd.RegisterFlagCompletionFunc("status", jobStatusCompletion)
+
+	// Set up completion for the sort-by flag
+	listCmd.RegisterFlagCompletionFunc("sort-by", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		sortOptions := []string{"name", "status", "created", "started", "duration"}
+		var filtered []string
+		for _, option := range sortOptions {
+			if strings.HasPrefix(option, toComplete) {
+				switch option {
+				case "name":
+					filtered = append(filtered, option+"\tSort by job name")
+				case "status":
+					filtered = append(filtered, option+"\tSort by job status")
+				case "created":
+					filtered = append(filtered, option+"\tSort by creation time")
+				case "started":
+					filtered = append(filtered, option+"\tSort by start time")
+				case "duration":
+					filtered = append(filtered, option+"\tSort by job duration")
+				}
+			}
+		}
+		return filtered, cobra.ShellCompDirectiveDefault
+	})
 }
 
 func runList(cmd *cobra.Command, args []string) error {

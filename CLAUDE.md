@@ -14,7 +14,7 @@ Joblin is a CLI tool built in Go that enables developers to deploy Python script
 
 ## Architecture
 - **Libraries**: joblib (core logic), k8slib (Kubernetes operations), notifylib (Teams webhooks)
-- **CLI Structure**: Nested commands (deploy/status/logs/terminate/list/cleanup/config)
+- **CLI Structure**: Nested commands (deploy/status/logs/terminate/list/cleanup/config/completion)
 - **Data Model**: Job, JobStatus, ResourceSpec, JobLog, Notification entities
 - **Storage**: BBolt for job metadata, Kubernetes etcd for job state
 
@@ -25,6 +25,7 @@ Joblin is a CLI tool built in Go that enables developers to deploy Python script
 4. **Lifecycle Control**: Terminate jobs, automatic cleanup with TTL
 5. **Notifications**: Teams webhook integration for job completion events
 6. **Multi-cluster Support**: Work with different Kubernetes contexts/namespaces
+7. **Shell Completion**: Auto-completion for bash, zsh, fish, and PowerShell
 
 ## Current Development Phase
 - **Phase**: Implementation Planning (001-build-a-cli)
@@ -89,3 +90,33 @@ cmd/joblin/         # Main CLI entry point
 - Defined user scenarios and quickstart guide for testing
 
 Ready for implementation task generation using the `/tasks` command.
+
+## Shell Completion Setup
+
+The CLI includes comprehensive shell completion support for enhanced user experience:
+
+### Installation
+Generate completion scripts for your shell:
+```bash
+# Bash (Linux)
+joblin completion bash > /etc/bash_completion.d/joblin
+
+# Bash (macOS)
+joblin completion bash > $(brew --prefix)/etc/bash_completion.d/joblin
+
+# Zsh
+joblin completion zsh > "${fpath[1]}/_joblin"
+
+# Fish
+joblin completion fish > ~/.config/fish/completions/joblin.fish
+
+# PowerShell
+joblin completion powershell > joblin.ps1
+```
+
+### Features
+- **Dynamic Job ID completion**: Auto-complete job IDs with status information
+- **Namespace completion**: Common Kubernetes namespace suggestions
+- **Flag value completion**: Smart completion for log levels, job statuses, sort options
+- **File completion**: Python script file completion for deploy command
+- **Cross-shell support**: Works with bash, zsh, fish, and PowerShell

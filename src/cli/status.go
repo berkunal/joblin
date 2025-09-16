@@ -39,6 +39,14 @@ Examples:
 func init() {
 	statusCmd.Flags().BoolVarP(&statusFlags.Watch, "watch", "w", false, "watch job status until completion")
 	statusCmd.Flags().StringVar(&statusFlags.Interval, "interval", "5s", "polling interval for watch mode")
+
+	// Set up job ID completion for the first argument
+	statusCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) == 0 {
+			return jobIDCompletion(cmd, args, toComplete)
+		}
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
 }
 
 func runStatus(cmd *cobra.Command, args []string) error {

@@ -54,6 +54,35 @@ func init() {
 	logsCmd.Flags().StringVar(&logsFlags.Source, "source", "stdout", "log source: stdout, stderr, system, all")
 	logsCmd.Flags().BoolVar(&logsFlags.NoColor, "no-color", false, "disable colored output")
 	logsCmd.Flags().BoolVar(&logsFlags.Timestamp, "timestamp", false, "show timestamps")
+
+	// Set up job ID completion for the first argument
+	logsCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) == 0 {
+			return jobIDCompletion(cmd, args, toComplete)
+		}
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	// Set up completion for the source flag
+	logsCmd.RegisterFlagCompletionFunc("source", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		sources := []string{"stdout", "stderr", "system", "all"}
+		var filtered []string
+		for _, source := range sources {
+			if strings.HasPrefix(source, toComplete) {
+				switch source {
+				case "stdout":
+					filtered = append(filtered, source+"\tStandard output from the Python script")
+				case "stderr":
+					filtered = append(filtered, source+"\tStandard error from the Python script")
+				case "system":
+					filtered = append(filtered, source+"\tKubernetes system messages")
+				case "all":
+					filtered = append(filtered, source+"\tAll log sources combined")
+				}
+			}
+		}
+		return filtered, cobra.ShellCompDirectiveDefault
+	})
 }
 
 func runLogs(cmd *cobra.Command, args []string) error {
