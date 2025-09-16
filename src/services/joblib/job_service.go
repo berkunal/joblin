@@ -21,16 +21,18 @@ type JobService struct {
 }
 
 type JobCreateRequest struct {
-	Name          string
-	ScriptPath    string
-	ScriptContent []byte
-	Dependencies  []string
-	Namespace     string
-	Context       string
-	Resources     *models.ResourceSpec
-	TTL           time.Duration
-	WebhookURL    string
-	Labels        map[string]string
+	Name            string
+	ScriptPath      string
+	ScriptContent   []byte
+	Dependencies    []string
+	Namespace       string
+	Context         string
+	Resources       *models.ResourceSpec
+	TTL             time.Duration
+	WebhookURL      string
+	Labels          map[string]string
+	EnvironmentVars map[string]string
+	Wait            bool
 }
 
 type JobListOptions struct {
@@ -79,6 +81,10 @@ func (js *JobService) CreateJob(ctx context.Context, req *JobCreateRequest) (*mo
 
 	if req.Labels != nil {
 		job.Labels = req.Labels
+	}
+
+	if req.EnvironmentVars != nil {
+		job.EnvironmentVars = req.EnvironmentVars
 	}
 
 	if err := js.storage.SaveJob(job); err != nil {

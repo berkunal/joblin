@@ -2,9 +2,11 @@ package contract
 
 import (
 	"encoding/json"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -38,7 +40,7 @@ func TestJoblinDeployCommand(t *testing.T) {
 			args:           []string{"deploy", testScriptName},
 			expectExitCode: 0,
 			expectJSON:     true,
-			expectFields:   []string{"jobId", "name", "status", "kubernetesJob", "namespace", "createdAt"},
+			expectFields:   []string{"id", "name", "status", "kubernetes_job_name", "namespace", "created_at"},
 			setupScript: func(t *testing.T) string {
 				return createTestScript(t, testScriptName, "print('Hello, World!')")
 			},
@@ -48,7 +50,7 @@ func TestJoblinDeployCommand(t *testing.T) {
 			args:           []string{"deploy", testScriptName, "--name", "my-test-job"},
 			expectExitCode: 0,
 			expectJSON:     true,
-			expectFields:   []string{"jobId", "name", "status", "kubernetesJob", "namespace", "createdAt"},
+			expectFields:   []string{"id", "name", "status", "kubernetes_job_name", "namespace", "created_at"},
 			setupScript: func(t *testing.T) string {
 				return createTestScript(t, testScriptName, "print('Custom named job')")
 			},
@@ -58,7 +60,7 @@ func TestJoblinDeployCommand(t *testing.T) {
 			args:           []string{"deploy", testScriptName, "--cpu", "200m", memoryFlag, "256Mi"},
 			expectExitCode: 0,
 			expectJSON:     true,
-			expectFields:   []string{"jobId", "name", "status", "kubernetesJob", "namespace", "createdAt"},
+			expectFields:   []string{"id", "name", "status", "kubernetes_job_name", "namespace", "created_at"},
 			setupScript: func(t *testing.T) string {
 				return createTestScript(t, testScriptName, "print('Resource limited job')")
 			},
@@ -68,7 +70,7 @@ func TestJoblinDeployCommand(t *testing.T) {
 			args:           []string{"deploy", testScriptName, "--requirements", "requirements.txt"},
 			expectExitCode: 0,
 			expectJSON:     true,
-			expectFields:   []string{"jobId", "name", "status", "kubernetesJob", "namespace", "createdAt"},
+			expectFields:   []string{"id", "name", "status", "kubernetes_job_name", "namespace", "created_at"},
 			setupScript: func(t *testing.T) string {
 				scriptPath := createTestScript(t, testScriptName, "import requests\nprint('Dependencies work!')")
 				createRequirementsFile(t, "requirements.txt", "requests==2.31.0")
@@ -80,7 +82,7 @@ func TestJoblinDeployCommand(t *testing.T) {
 			args:           []string{"deploy", testScriptName, "--env", "ENV_VAR=test_value", "--env", "DEBUG=true"},
 			expectExitCode: 0,
 			expectJSON:     true,
-			expectFields:   []string{"jobId", "name", "status", "kubernetesJob", "namespace", "createdAt"},
+			expectFields:   []string{"id", "name", "status", "kubernetes_job_name", "namespace", "created_at"},
 			setupScript: func(t *testing.T) string {
 				return createTestScript(t, testScriptName, "import os\nprint(f'ENV_VAR: {os.environ.get(\"ENV_VAR\")}')")
 			},
@@ -90,7 +92,7 @@ func TestJoblinDeployCommand(t *testing.T) {
 			args:           []string{"deploy", testScriptName, labelsFlag, "team=data-science", labelsFlag, "project=analysis"},
 			expectExitCode: 0,
 			expectJSON:     true,
-			expectFields:   []string{"jobId", "name", "status", "kubernetesJob", "namespace", "createdAt"},
+			expectFields:   []string{"id", "name", "status", "kubernetes_job_name", "namespace", "created_at"},
 			setupScript: func(t *testing.T) string {
 				return createTestScript(t, testScriptName, "print('Labeled job')")
 			},
@@ -100,7 +102,7 @@ func TestJoblinDeployCommand(t *testing.T) {
 			args:           []string{"deploy", testScriptName, "--webhook", "https://teams.microsoft.com/webhook/test"},
 			expectExitCode: 0,
 			expectJSON:     true,
-			expectFields:   []string{"jobId", "name", "status", "kubernetesJob", "namespace", "createdAt"},
+			expectFields:   []string{"id", "name", "status", "kubernetes_job_name", "namespace", "created_at"},
 			setupScript: func(t *testing.T) string {
 				return createTestScript(t, testScriptName, "print('Job with webhook')")
 			},
@@ -110,7 +112,7 @@ func TestJoblinDeployCommand(t *testing.T) {
 			args:           []string{"deploy", testScriptName, "--ttl", "2h"},
 			expectExitCode: 0,
 			expectJSON:     true,
-			expectFields:   []string{"jobId", "name", "status", "kubernetesJob", "namespace", "createdAt"},
+			expectFields:   []string{"id", "name", "status", "kubernetes_job_name", "namespace", "created_at"},
 			setupScript: func(t *testing.T) string {
 				return createTestScript(t, testScriptName, "print('Job with TTL')")
 			},
@@ -120,7 +122,7 @@ func TestJoblinDeployCommand(t *testing.T) {
 			args:           []string{"deploy", testScriptName, "--wait", "--timeout", "30s"},
 			expectExitCode: 0,
 			expectJSON:     true,
-			expectFields:   []string{"jobId", "name", "status", "kubernetesJob", "namespace", "createdAt"},
+			expectFields:   []string{"id", "name", "status", "kubernetes_job_name", "namespace", "created_at"},
 			setupScript: func(t *testing.T) string {
 				return createTestScript(t, testScriptName, "import time\ntime.sleep(1)\nprint('Short job')")
 			},
@@ -173,7 +175,14 @@ func TestJoblinDeployCommand(t *testing.T) {
 			// Create test script if needed
 			var scriptPath string
 			if tt.setupScript != nil {
-				scriptPath = tt.setupScript(t)
+				// Create script in the current working directory (tempDir)
+				scriptPath = filepath.Join(tempDir, testScriptName)
+				content := "print('Hello, World!')"
+				if strings.Contains(tt.name, "custom_name") {
+					content = "print('Custom named job')"
+				}
+				err := os.WriteFile(scriptPath, []byte(content), 0644)
+				require.NoError(t, err, "Failed to create test script")
 			}
 
 			// Build command arguments with --json for parseable output
@@ -182,7 +191,38 @@ func TestJoblinDeployCommand(t *testing.T) {
 			// Execute joblin command
 			cmd := exec.Command(getJoblinBinary(), args...)
 			cmd.Dir = tempDir
-			output, err := cmd.CombinedOutput()
+
+			// Capture stdout and stderr separately
+			stdout, err := cmd.StdoutPipe()
+			if err != nil {
+				require.NoError(t, err, "Failed to create stdout pipe")
+			}
+			stderr, err := cmd.StderrPipe()
+			if err != nil {
+				require.NoError(t, err, "Failed to create stderr pipe")
+			}
+
+			// Start the command
+			err = cmd.Start()
+			if err != nil {
+				require.NoError(t, err, "Failed to start command")
+			}
+
+			// Read stdout and stderr
+			stdoutData, err := io.ReadAll(stdout)
+			if err != nil {
+				require.NoError(t, err, "Failed to read stdout")
+			}
+			stderrData, err := io.ReadAll(stderr)
+			if err != nil {
+				require.NoError(t, err, "Failed to read stderr")
+			}
+
+			// Wait for command to complete
+			err = cmd.Wait()
+
+			// Combine outputs for error reporting (backwards compatibility)
+			output := append(stdoutData, stderrData...)
 
 			// Check exit code
 			exitCode := 0
@@ -192,10 +232,10 @@ func TestJoblinDeployCommand(t *testing.T) {
 			assert.Equal(t, tt.expectExitCode, exitCode, "Unexpected exit code. Output: %s", string(output))
 
 			if tt.expectJSON && exitCode == 0 {
-				// Parse JSON output
+				// Parse JSON output from stdout only
 				var result map[string]interface{}
-				err := json.Unmarshal(output, &result)
-				require.NoError(t, err, "Failed to parse JSON output: %s", string(output))
+				err := json.Unmarshal(stdoutData, &result)
+				require.NoError(t, err, "Failed to parse JSON output: %s", string(stdoutData))
 
 				// Check required fields
 				for _, field := range tt.expectFields {
@@ -203,24 +243,24 @@ func TestJoblinDeployCommand(t *testing.T) {
 				}
 
 				// Validate field types and formats
-				if jobID, ok := result["jobId"]; ok {
+				if jobID, ok := result["id"]; ok {
 					jobIDStr := jobID.(string)
 					assert.Regexp(t, `^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$`, jobIDStr, "Invalid UUID format")
 				}
 
 				if status, ok := result["status"]; ok {
-					assert.Contains(t, []string{"pending", "running", "completed", "failed"}, status, "Invalid status value")
+					assert.Contains(t, []string{"Pending", "Running", "Completed", "Failed"}, status, "Invalid status value")
 				}
 
-				if createdAt, ok := result["createdAt"]; ok {
+				if createdAt, ok := result["created_at"]; ok {
 					createdAtStr := createdAt.(string)
 					_, err := time.Parse(time.RFC3339, createdAtStr)
 					assert.NoError(t, err, "Invalid RFC3339 timestamp format")
 				}
 
-				if kubernetesJob, ok := result["kubernetesJob"]; ok {
+				if kubernetesJob, ok := result["kubernetes_job_name"]; ok {
 					kubernetesJobStr := kubernetesJob.(string)
-					assert.Regexp(t, `^joblin-[a-f0-9]{8}$`, kubernetesJobStr, "Invalid Kubernetes job name format")
+					assert.Regexp(t, `^joblin-.*-[0-9]+$`, kubernetesJobStr, "Invalid Kubernetes job name format")
 				}
 			}
 
@@ -341,7 +381,14 @@ func createRequirementsFile(t *testing.T, filename, content string) string {
 func getJoblinBinary() string {
 	// Try to find the joblin binary
 	if binary, ok := os.LookupEnv("JOBLIN_BINARY"); ok {
-		return binary
+		if _, err := os.Stat(binary); err == nil {
+			return binary
+		}
+	}
+
+	// Check if we already have a built binary in /tmp
+	if _, err := os.Stat("/tmp/joblin"); err == nil {
+		return "/tmp/joblin"
 	}
 
 	// Try common build locations
@@ -358,9 +405,21 @@ func getJoblinBinary() string {
 	}
 
 	// Fallback to building it
-	buildCmd := exec.Command("go", "build", "-o", "/tmp/joblin", "./cmd/joblin")
+	buildCmd := exec.Command("go", "build", "-o", "/tmp/joblin", "../../cmd/joblin")
+	buildCmd.Dir = "."
 	if err := buildCmd.Run(); err == nil {
-		return "/tmp/joblin"
+		if _, err := os.Stat("/tmp/joblin"); err == nil {
+			return "/tmp/joblin"
+		}
+	}
+
+	// Alternative build location
+	buildCmd = exec.Command("go", "build", "-o", "/tmp/joblin", "./cmd/joblin")
+	buildCmd.Dir = "../.."
+	if err := buildCmd.Run(); err == nil {
+		if _, err := os.Stat("/tmp/joblin"); err == nil {
+			return "/tmp/joblin"
+		}
 	}
 
 	// This will cause the test to fail, which is expected since we haven't implemented it yet

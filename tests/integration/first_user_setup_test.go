@@ -48,7 +48,7 @@ print("First-time user setup test completed successfully!")
 
 		// Step 3: Deploy the script
 		t.Log("Step 3: Deploying hello.py with 'joblin deploy'")
-		deployCmd := exec.Command(getJoblinBinary(), "deploy", "hello.py", "--output", "json")
+		deployCmd := exec.Command(getJoblinBinary(), "deploy", "hello.py", "--json")
 		deployCmd.Dir = tempDir
 		deployOutput, err := deployCmd.CombinedOutput()
 
@@ -73,7 +73,7 @@ print("First-time user setup test completed successfully!")
 
 			// Step 4: Check job status
 			t.Log("Step 4: Checking job status with 'joblin status'")
-			statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--output", "json")
+			statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--json")
 			statusCmd.Dir = tempDir
 			statusOutput, err := statusCmd.CombinedOutput()
 			require.NoError(t, err, "Status command should succeed")
@@ -94,7 +94,7 @@ print("First-time user setup test completed successfully!")
 				case <-timeout:
 					t.Fatal("Job did not complete within 2 minutes")
 				case <-ticker.C:
-					statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--output", "json")
+					statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--json")
 					statusCmd.Dir = tempDir
 					statusOutput, err := statusCmd.CombinedOutput()
 					if err == nil {

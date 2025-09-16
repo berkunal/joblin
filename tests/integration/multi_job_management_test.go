@@ -80,7 +80,7 @@ func TestMultiJobManagement(t *testing.T) {
 			deployArgs := []string{
 				"deploy", script.name,
 				"--labels", labelsStr,
-				"--output", "json",
+				"--json",
 			}
 
 			deployCmd := exec.Command(getJoblinBinary(), deployArgs...)
@@ -109,7 +109,7 @@ func TestMultiJobManagement(t *testing.T) {
 		t.Log("Testing job listing and filtering...")
 
 		// Test 1: List all jobs
-		listCmd := exec.Command(getJoblinBinary(), "list", "--output", "json")
+		listCmd := exec.Command(getJoblinBinary(), "list", "--json")
 		listCmd.Dir = tempDir
 		listOutput, err := listCmd.CombinedOutput()
 		require.NoError(t, err, "List all jobs should succeed")
@@ -119,7 +119,7 @@ func TestMultiJobManagement(t *testing.T) {
 		assert.GreaterOrEqual(t, len(allJobsResult.Jobs), len(jobIDs), "Should list all deployed jobs")
 
 		// Test 2: Filter by environment
-		listEnvCmd := exec.Command(getJoblinBinary(), "list", "--labels", "env=test", "--output", "json")
+		listEnvCmd := exec.Command(getJoblinBinary(), "list", "--labels", "env=test", "--json")
 		listEnvCmd.Dir = tempDir
 		listEnvOutput, err := listEnvCmd.CombinedOutput()
 		require.NoError(t, err, "List with env filter should succeed")
@@ -129,7 +129,7 @@ func TestMultiJobManagement(t *testing.T) {
 		assert.Equal(t, 2, len(envJobsResult.Jobs), "Should find 2 jobs with env=test")
 
 		// Test 3: Filter by team
-		listTeamCmd := exec.Command(getJoblinBinary(), "list", "--labels", "team=backend", "--output", "json")
+		listTeamCmd := exec.Command(getJoblinBinary(), "list", "--labels", "team=backend", "--json")
 		listTeamCmd.Dir = tempDir
 		listTeamOutput, err := listTeamCmd.CombinedOutput()
 		require.NoError(t, err, "List with team filter should succeed")
@@ -141,7 +141,7 @@ func TestMultiJobManagement(t *testing.T) {
 		// Test 4: Filter by status
 		time.Sleep(2 * time.Second) // Wait for quick job to complete
 
-		listRunningCmd := exec.Command(getJoblinBinary(), "list", "--status", "running", "--output", "json")
+		listRunningCmd := exec.Command(getJoblinBinary(), "list", "--status", "running", "--json")
 		listRunningCmd.Dir = tempDir
 		listRunningOutput, err := listRunningCmd.CombinedOutput()
 		require.NoError(t, err, "List running jobs should succeed")
@@ -151,7 +151,7 @@ func TestMultiJobManagement(t *testing.T) {
 		assert.GreaterOrEqual(t, len(runningJobsResult.Jobs), 2, "Should have at least 2 running jobs")
 
 		// Test 5: Filter by time
-		listRecentCmd := exec.Command(getJoblinBinary(), "list", "--since", "1m", "--output", "json")
+		listRecentCmd := exec.Command(getJoblinBinary(), "list", "--since", "1m", "--json")
 		listRecentCmd.Dir = tempDir
 		listRecentOutput, err := listRecentCmd.CombinedOutput()
 		require.NoError(t, err, "List recent jobs should succeed")
@@ -173,7 +173,7 @@ func TestMultiJobManagement(t *testing.T) {
 		}
 
 		if longJobID != "" {
-			terminateCmd := exec.Command(getJoblinBinary(), "terminate", longJobID, "--output", "json")
+			terminateCmd := exec.Command(getJoblinBinary(), "terminate", longJobID, "--json")
 			terminateCmd.Dir = tempDir
 			terminateOutput, err := terminateCmd.CombinedOutput()
 			require.NoError(t, err, "Terminate should succeed")
@@ -184,7 +184,7 @@ func TestMultiJobManagement(t *testing.T) {
 
 			// Verify termination took effect
 			time.Sleep(2 * time.Second)
-			statusCmd := exec.Command(getJoblinBinary(), "status", longJobID, "--output", "json")
+			statusCmd := exec.Command(getJoblinBinary(), "status", longJobID, "--json")
 			statusCmd.Dir = tempDir
 			statusOutput, err := statusCmd.CombinedOutput()
 			require.NoError(t, err, "Status check should succeed")
@@ -217,7 +217,7 @@ func TestMultiJobManagement(t *testing.T) {
 		time.Sleep(8 * time.Second)
 
 		// Dry run cleanup of completed jobs
-		cleanupCmd := exec.Command(getJoblinBinary(), "cleanup", "--status", "completed", "--dry-run", "--output", "json")
+		cleanupCmd := exec.Command(getJoblinBinary(), "cleanup", "--status", "completed", "--dry-run", "--json")
 		cleanupCmd.Dir = tempDir
 		cleanupOutput, err := cleanupCmd.CombinedOutput()
 		require.NoError(t, err, "Cleanup dry-run should succeed")
@@ -228,7 +228,7 @@ func TestMultiJobManagement(t *testing.T) {
 		assert.GreaterOrEqual(t, len(cleanupResult.JobsToCleanup), 1, "Should identify at least one job for cleanup")
 
 		// Actual cleanup of completed jobs older than 30 seconds
-		cleanupActualCmd := exec.Command(getJoblinBinary(), "cleanup", "--older-than", "30s", "--status", "completed", "--output", "json")
+		cleanupActualCmd := exec.Command(getJoblinBinary(), "cleanup", "--older-than", "30s", "--status", "completed", "--json")
 		cleanupActualCmd.Dir = tempDir
 		cleanupActualOutput, err := cleanupActualCmd.CombinedOutput()
 		require.NoError(t, err, "Actual cleanup should succeed")
@@ -250,7 +250,7 @@ print("Job completed")
 		require.NoError(t, os.WriteFile(scriptPath, []byte(scriptContent), 0755))
 
 		// Deploy job
-		deployCmd := exec.Command(getJoblinBinary(), "deploy", "state_test.py", "--labels", "test=state-tracking", "--output", "json")
+		deployCmd := exec.Command(getJoblinBinary(), "deploy", "state_test.py", "--labels", "test=state-tracking", "--json")
 		deployCmd.Dir = tempDir
 		deployOutput, err := deployCmd.CombinedOutput()
 
@@ -263,7 +263,7 @@ print("Job completed")
 			jobID := deployResult.JobID
 
 			// Check initial state
-			statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--output", "json")
+			statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--json")
 			statusCmd.Dir = tempDir
 			statusOutput, err := statusCmd.CombinedOutput()
 			require.NoError(t, err, "Initial status check should succeed")
@@ -274,7 +274,7 @@ print("Job completed")
 
 			// Wait and check running state
 			time.Sleep(2 * time.Second)
-			statusCmd = exec.Command(getJoblinBinary(), "status", jobID, "--output", "json")
+			statusCmd = exec.Command(getJoblinBinary(), "status", jobID, "--json")
 			statusCmd.Dir = tempDir
 			statusOutput, err = statusCmd.CombinedOutput()
 			require.NoError(t, err, "Running status check should succeed")
@@ -283,7 +283,7 @@ print("Job completed")
 			assert.Contains(t, []string{"running", "completed"}, statusResult.Status, "Should be running or completed")
 
 			// Verify job appears in list
-			listCmd := exec.Command(getJoblinBinary(), "list", "--labels", "test=state-tracking", "--output", "json")
+			listCmd := exec.Command(getJoblinBinary(), "list", "--labels", "test=state-tracking", "--json")
 			listCmd.Dir = tempDir
 			listOutput, err := listCmd.CombinedOutput()
 			require.NoError(t, err, "List with label filter should succeed")
@@ -306,7 +306,7 @@ print("Test completed")
 		require.NoError(t, os.WriteFile(scriptPath, []byte(scriptContent), 0755))
 
 		// Deploy job
-		deployCmd := exec.Command(getJoblinBinary(), "deploy", "concurrent_test.py", "--output", "json")
+		deployCmd := exec.Command(getJoblinBinary(), "deploy", "concurrent_test.py", "--json")
 		deployCmd.Dir = tempDir
 		deployOutput, err := deployCmd.CombinedOutput()
 
@@ -323,9 +323,9 @@ print("Test completed")
 				name string
 				cmd  []string
 			}{
-				{"status", []string{"status", jobID, "--output", "json"}},
+				{"status", []string{"status", jobID, "--json"}},
 				{"logs", []string{"logs", jobID}},
-				{"status_again", []string{"status", jobID, "--output", "json"}},
+				{"status_again", []string{"status", jobID, "--json"}},
 			}
 
 			results := make(chan error, len(operations))

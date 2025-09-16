@@ -90,7 +90,7 @@ python-dateutil==2.8.2
 			"--memory", "256Mi",
 			"--webhook", mockServer.URL,
 			"--labels", "env=test,team=backend",
-			"--output", "json",
+			"--json",
 		}
 		deployCmd := exec.Command(getJoblinBinary(), deployArgs...)
 		deployCmd.Dir = tempDir
@@ -121,7 +121,7 @@ python-dateutil==2.8.2
 				case <-timeout:
 					t.Fatal("Job did not complete within 5 minutes")
 				case <-ticker.C:
-					statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--output", "json")
+					statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--json")
 					statusCmd.Dir = tempDir
 					statusOutput, err := statusCmd.CombinedOutput()
 					if err == nil {
@@ -163,7 +163,7 @@ python-dateutil==2.8.2
 
 			// Step 5: List jobs with filtering
 			t.Log("Step 5: Testing job listing with filters")
-			listCmd := exec.Command(getJoblinBinary(), "list", "--labels", "env=test", "--output", "json")
+			listCmd := exec.Command(getJoblinBinary(), "list", "--labels", "env=test", "--json")
 			listCmd.Dir = tempDir
 			listOutput, err := listCmd.CombinedOutput()
 			require.NoError(t, err, "List command should succeed")
@@ -175,7 +175,7 @@ python-dateutil==2.8.2
 
 			// Step 6: Test cleanup functionality
 			t.Log("Step 6: Testing cleanup functionality")
-			cleanupCmd := exec.Command(getJoblinBinary(), "cleanup", "--status", "completed", "--dry-run", "--output", "json")
+			cleanupCmd := exec.Command(getJoblinBinary(), "cleanup", "--status", "completed", "--dry-run", "--json")
 			cleanupCmd.Dir = tempDir
 			cleanupOutput, err := cleanupCmd.CombinedOutput()
 			require.NoError(t, err, "Cleanup dry-run should succeed")
@@ -212,7 +212,7 @@ python-dateutil==2.8.2
 					"deploy", "simple.py",
 					"--cpu", tc.cpu,
 					"--memory", tc.memory,
-					"--output", "json",
+					"--json",
 				}
 				deployCmd := exec.Command(getJoblinBinary(), deployArgs...)
 				deployCmd.Dir = tempDir

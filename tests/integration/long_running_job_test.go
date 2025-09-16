@@ -57,7 +57,7 @@ print("All batches processed")
 
 		// Deploy the long-running job
 		t.Log("Deploying long-running job...")
-		deployCmd := exec.Command(getJoblinBinary(), "deploy", "long_runner.py", "--labels", "type=long-running", "--output", "json")
+		deployCmd := exec.Command(getJoblinBinary(), "deploy", "long_runner.py", "--labels", "type=long-running", "--json")
 		deployCmd.Dir = tempDir
 		deployOutput, err := deployCmd.CombinedOutput()
 
@@ -142,7 +142,7 @@ print("All batches processed")
 
 		// Check status multiple times while job is running
 		for i := 0; i < 3; i++ {
-			statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--output", "json")
+			statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--json")
 			statusCmd.Dir = tempDir
 			statusOutput, err := statusCmd.CombinedOutput()
 			require.NoError(t, err, "Status check should succeed")
@@ -164,7 +164,7 @@ print("All batches processed")
 		// Test job termination during execution
 		t.Log("Testing job termination during execution...")
 
-		terminateCmd := exec.Command(getJoblinBinary(), "terminate", jobID, "--output", "json")
+		terminateCmd := exec.Command(getJoblinBinary(), "terminate", jobID, "--json")
 		terminateCmd.Dir = tempDir
 		terminateOutput, err := terminateCmd.CombinedOutput()
 		require.NoError(t, err, "Terminate command should succeed")
@@ -176,7 +176,7 @@ print("All batches processed")
 		// Verify termination took effect
 		time.Sleep(5 * time.Second)
 
-		statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--output", "json")
+		statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--json")
 		statusCmd.Dir = tempDir
 		statusOutput, err := statusCmd.CombinedOutput()
 		require.NoError(t, err, "Status check after termination should succeed")
@@ -211,7 +211,7 @@ print("Status watch test job completed")
 		require.NoError(t, os.WriteFile(scriptPath, []byte(scriptContent), 0755))
 
 		// Deploy the job
-		deployCmd := exec.Command(getJoblinBinary(), "deploy", "status_watch.py", "--output", "json")
+		deployCmd := exec.Command(getJoblinBinary(), "deploy", "status_watch.py", "--json")
 		deployCmd.Dir = tempDir
 		deployOutput, err := deployCmd.CombinedOutput()
 
@@ -233,7 +233,7 @@ print("Status watch test job completed")
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 
-		watchCmd := exec.CommandContext(ctx, getJoblinBinary(), "status", jobID, "--watch", "--output", "json")
+		watchCmd := exec.CommandContext(ctx, getJoblinBinary(), "status", jobID, "--watch", "--json")
 		watchCmd.Dir = tempDir
 
 		stdout, err := watchCmd.StdoutPipe()
@@ -308,7 +308,7 @@ print("Job completed for TTL testing")
 		require.NoError(t, os.WriteFile(scriptPath, []byte(scriptContent), 0755))
 
 		// Deploy job with short TTL
-		deployCmd := exec.Command(getJoblinBinary(), "deploy", "ttl_test.py", "--ttl", "30s", "--output", "json")
+		deployCmd := exec.Command(getJoblinBinary(), "deploy", "ttl_test.py", "--ttl", "30s", "--json")
 		deployCmd.Dir = tempDir
 		deployOutput, err := deployCmd.CombinedOutput()
 
@@ -334,7 +334,7 @@ print("Job completed for TTL testing")
 			case <-timeout:
 				t.Fatal("Job did not complete within timeout")
 			case <-ticker.C:
-				statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--output", "json")
+				statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--json")
 				statusCmd.Dir = tempDir
 				statusOutput, err := statusCmd.CombinedOutput()
 				if err == nil {
@@ -354,7 +354,7 @@ print("Job completed for TTL testing")
 		time.Sleep(40 * time.Second)
 
 		// Verify job was cleaned up
-		statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--output", "json")
+		statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--json")
 		statusCmd.Dir = tempDir
 		statusOutput, err := statusCmd.CombinedOutput()
 
@@ -371,7 +371,7 @@ print("Job completed for TTL testing")
 		}
 
 		// Verify job doesn't appear in active job list
-		listCmd := exec.Command(getJoblinBinary(), "list", "--output", "json")
+		listCmd := exec.Command(getJoblinBinary(), "list", "--json")
 		listCmd.Dir = tempDir
 		listOutput, err := listCmd.CombinedOutput()
 		require.NoError(t, err, "List command should succeed")
@@ -422,7 +422,7 @@ print("Resource monitoring test completed")
 
 		// Deploy with specific resource limits
 		deployCmd := exec.Command(getJoblinBinary(), "deploy", "resource_test.py",
-			"--cpu", "500m", "--memory", "256Mi", "--output", "json")
+			"--cpu", "500m", "--memory", "256Mi", "--json")
 		deployCmd.Dir = tempDir
 		deployOutput, err := deployCmd.CombinedOutput()
 
@@ -443,7 +443,7 @@ print("Resource monitoring test completed")
 
 		for i := 0; i < 5; i++ {
 			// Check if status includes resource usage information
-			statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--verbose", "--output", "json")
+			statusCmd := exec.Command(getJoblinBinary(), "status", jobID, "--verbose", "--json")
 			statusCmd.Dir = tempDir
 			statusOutput, err := statusCmd.CombinedOutput()
 			require.NoError(t, err, "Status with verbose should succeed")

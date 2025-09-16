@@ -43,13 +43,16 @@ func (r *ResourceSpec) validateCPU() error {
 
 	quantity, err := resource.ParseQuantity(r.CPU)
 	if err != nil {
-		return fmt.Errorf("invalid CPU quantity format: %w", err)
+		return fmt.Errorf("Invalid CPU format: %w", err)
 	}
 
 	// Convert to millicores for comparison
 	milliCPU := quantity.MilliValue()
 
 	// Minimum: 10m (10 millicores)
+	if milliCPU <= 0 {
+		return fmt.Errorf("CPU must be positive")
+	}
 	if milliCPU < 10 {
 		return fmt.Errorf("CPU must be at least 10m, got %s", r.CPU)
 	}
@@ -69,11 +72,16 @@ func (r *ResourceSpec) validateMemory() error {
 
 	quantity, err := resource.ParseQuantity(r.Memory)
 	if err != nil {
-		return fmt.Errorf("invalid memory quantity format: %w", err)
+		return fmt.Errorf("Invalid memory format: %w", err)
 	}
 
 	// Convert to bytes for comparison
 	bytes := quantity.Value()
+
+	// Check for zero/negative memory
+	if bytes <= 0 {
+		return fmt.Errorf("Memory must be positive")
+	}
 
 	// Minimum: 64Mi
 	minMemory := resource.MustParse("64Mi")

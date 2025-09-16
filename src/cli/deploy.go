@@ -22,6 +22,9 @@ var deployFlags struct {
 	TTL          string
 	WebhookURL   string
 	Labels       []string
+	Env          []string
+	Wait         bool
+	Timeout      string
 	DryRun       bool
 }
 
@@ -51,8 +54,11 @@ func init() {
 	deployCmd.Flags().StringVar(&deployFlags.Memory, "memory", "", "memory limit (e.g., 128Mi, 1Gi)")
 	deployCmd.Flags().StringVar(&deployFlags.Storage, "storage", "", "ephemeral storage limit (e.g., 1Gi, 10Gi)")
 	deployCmd.Flags().StringVar(&deployFlags.TTL, "ttl", "", "time-to-live for job cleanup (e.g., 1h, 24h, 7d)")
-	deployCmd.Flags().StringVar(&deployFlags.WebhookURL, "webhook-url", "", "Teams webhook URL for notifications")
-	deployCmd.Flags().StringSliceVar(&deployFlags.Labels, "label", []string{}, "labels to apply to the job (key=value)")
+	deployCmd.Flags().StringVar(&deployFlags.WebhookURL, "webhook", "", "Teams webhook URL for notifications")
+	deployCmd.Flags().StringSliceVar(&deployFlags.Labels, "labels", []string{}, "labels to apply to the job (key=value)")
+	deployCmd.Flags().StringSliceVar(&deployFlags.Env, "env", []string{}, "environment variables (KEY=value)")
+	deployCmd.Flags().BoolVar(&deployFlags.Wait, "wait", false, "wait for job completion")
+	deployCmd.Flags().StringVar(&deployFlags.Timeout, "timeout", "", "timeout for waiting (e.g., 30s, 5m, 1h)")
 	deployCmd.Flags().BoolVar(&deployFlags.DryRun, "dry-run", false, "validate job without creating it")
 }
 
@@ -61,7 +67,7 @@ func runDeploy(cmd *cobra.Command, args []string) error {
 
 	// Validate script file exists
 	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
-		return fmt.Errorf("script file not found: %s", scriptPath)
+		return fmt.Errorf("Script file not found or unreadable")
 	}
 
 	// Read script content
@@ -83,9 +89,23 @@ func runDeploy(cmd *cobra.Command, args []string) error {
 	}
 
 	// Parse resource specifications
-	resources, err := parseResourceSpec()
+	resources, err := parseResourceSpecEarly()
 	if err != nil {
 		return fmt.Errorf("failed to parse resource specifications: %w", err)
+	}
+
+	// Validate resource specifications if provided
+	if resources != nil {
+		if err := resources.Validate(); err != nil {
+			return err
+		}
+	}
+
+	// Validate webhook URL if provided early
+	if deployFlags.WebhookURL != "" {
+		if err := models.ValidateWebhookURL(deployFlags.WebhookURL); err != nil {
+			return err
+		}
 	}
 
 	// Parse TTL
@@ -100,7 +120,13 @@ func runDeploy(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to parse labels: %w", err)
 	}
 
-	// Get effective values
+	// Parse environment variables
+	envVars, err := parseEnvironmentVariables(deployFlags.Env)
+	if err != nil {
+		return fmt.Errorf("failed to parse environment variables: %w", err)
+	}
+
+	// Get effective values (this triggers CLI context initialization)
 	namespace := GetEffectiveNamespace()
 	context := GetEffectiveContext()
 	webhookURL := deployFlags.WebhookURL
@@ -108,18 +134,33 @@ func runDeploy(cmd *cobra.Command, args []string) error {
 		webhookURL = cliContext.Config.TeamsWebhookURL
 	}
 
+	// Final webhook URL validation if it came from config
+	if webhookURL != "" && webhookURL != deployFlags.WebhookURL {
+		if err := models.ValidateWebhookURL(webhookURL); err != nil {
+			return err
+		}
+	}
+
+	// Parse final resource specifications with defaults
+	finalResources, err := parseResourceSpec()
+	if err != nil {
+		return fmt.Errorf("failed to parse final resource specifications: %w", err)
+	}
+
 	// Create job request
 	request := &joblib.JobCreateRequest{
-		Name:          jobName,
-		ScriptPath:    scriptPath,
-		ScriptContent: scriptContent,
-		Dependencies:  dependencies,
-		Namespace:     namespace,
-		Context:       context,
-		Resources:     resources,
-		TTL:           ttl,
-		WebhookURL:    webhookURL,
-		Labels:        labels,
+		Name:            jobName,
+		ScriptPath:      scriptPath,
+		ScriptContent:   scriptContent,
+		Dependencies:    dependencies,
+		Namespace:       namespace,
+		Context:         context,
+		Resources:       finalResources,
+		TTL:             ttl,
+		WebhookURL:      webhookURL,
+		Labels:          labels,
+		EnvironmentVars: envVars,
+		Wait:            deployFlags.Wait,
 	}
 
 	if deployFlags.DryRun {
@@ -215,6 +256,31 @@ func parseDependencies(scriptPath, requirementsFlag string) ([]string, error) {
 	return dependencies, nil
 }
 
+func parseResourceSpecEarly() (*models.ResourceSpec, error) {
+	if deployFlags.CPU == "" && deployFlags.Memory == "" && deployFlags.Storage == "" {
+		return nil, nil // Use defaults from config later
+	}
+
+	resources := &models.ResourceSpec{
+		CPU:              deployFlags.CPU,
+		Memory:           deployFlags.Memory,
+		EphemeralStorage: deployFlags.Storage,
+	}
+
+	// Apply minimal defaults for validation - we'll get proper defaults later
+	if resources.CPU == "" {
+		resources.CPU = "100m"
+	}
+	if resources.Memory == "" {
+		resources.Memory = "128Mi"
+	}
+	if resources.EphemeralStorage == "" {
+		resources.EphemeralStorage = "1Gi"
+	}
+
+	return resources, nil
+}
+
 func parseResourceSpec() (*models.ResourceSpec, error) {
 	if deployFlags.CPU == "" && deployFlags.Memory == "" && deployFlags.Storage == "" {
 		return nil, nil // Use defaults from config
@@ -285,6 +351,28 @@ func parseLabels(labelSlice []string) (map[string]string, error) {
 	}
 
 	return labels, nil
+}
+
+func parseEnvironmentVariables(envSlice []string) (map[string]string, error) {
+	envVars := make(map[string]string)
+
+	for _, env := range envSlice {
+		parts := strings.SplitN(env, "=", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid environment variable format: %s (use KEY=value)", env)
+		}
+
+		key := strings.TrimSpace(parts[0])
+		value := strings.TrimSpace(parts[1])
+
+		if key == "" {
+			return nil, fmt.Errorf("environment variable key cannot be empty: %s", env)
+		}
+
+		envVars[key] = value
+	}
+
+	return envVars, nil
 }
 
 func runDryRun(request *joblib.JobCreateRequest) error {

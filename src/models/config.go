@@ -64,7 +64,7 @@ func (c *CLIConfig) Validate() error {
 	}
 
 	if c.TeamsWebhookURL != "" {
-		if err := validateWebhookURL(c.TeamsWebhookURL); err != nil {
+		if err := ValidateWebhookURL(c.TeamsWebhookURL); err != nil {
 			return fmt.Errorf("invalid Teams webhook URL: %w", err)
 		}
 	}
@@ -204,7 +204,7 @@ func (c *CLIConfig) Clone() *CLIConfig {
 
 func (c *CLIConfig) UpdateWebhookURL(webhookURL string) error {
 	if webhookURL != "" {
-		if err := validateWebhookURL(webhookURL); err != nil {
+		if err := ValidateWebhookURL(webhookURL); err != nil {
 			return fmt.Errorf("invalid webhook URL: %w", err)
 		}
 	}

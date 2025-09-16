@@ -26,6 +26,7 @@ type Job struct {
 	TTL               time.Duration     `json:"ttl"`
 	WebhookURL        string            `json:"webhook_url,omitempty"`
 	Labels            map[string]string `json:"labels,omitempty"`
+	EnvironmentVars   map[string]string `json:"environment_vars,omitempty"`
 }
 
 func NewJob(name, scriptPath string, scriptContent []byte, dependencies []string) (*Job, error) {

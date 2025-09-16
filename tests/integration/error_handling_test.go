@@ -32,7 +32,7 @@ print("This will cause a syntax error")
 		scriptPath := filepath.Join(tempDir, "syntax_error.py")
 		require.NoError(t, os.WriteFile(scriptPath, []byte(scriptContent), 0755))
 
-		deployCmd := exec.Command(getJoblinBinary(), "deploy", "syntax_error.py", "--output", "json")
+		deployCmd := exec.Command(getJoblinBinary(), "deploy", "syntax_error.py", "--json")
 		deployCmd.Dir = tempDir
 		deployOutput, err := deployCmd.CombinedOutput()
 
@@ -71,7 +71,7 @@ print("This will cause a syntax error")
 					"deploy", "simple.py",
 					"--cpu", tc.cpu,
 					"--memory", tc.memory,
-					"--output", "json",
+					"--json",
 				}
 				deployCmd := exec.Command(getJoblinBinary(), deployArgs...)
 				deployCmd.Dir = tempDir
@@ -115,9 +115,9 @@ print("This will cause a syntax error")
 					// Create unreadable script
 					unreadablePath := filepath.Join(tempDir, "unreadable.py")
 					require.NoError(t, os.WriteFile(unreadablePath, []byte("print('test')"), 0000))
-					deployArgs = []string{"deploy", "unreadable.py", "--output", "json"}
+					deployArgs = []string{"deploy", "unreadable.py", "--json"}
 				} else {
-					deployArgs = []string{"deploy", tc.scriptFile, "--output", "json"}
+					deployArgs = []string{"deploy", tc.scriptFile, "--json"}
 					if tc.reqFile != "" {
 						deployArgs = append(deployArgs, "--requirements", tc.reqFile)
 					}
@@ -160,7 +160,7 @@ print("This will cause a syntax error")
 				deployArgs := []string{
 					"deploy", "simple.py",
 					"--namespace", tc.namespace,
-					"--output", "json",
+					"--json",
 				}
 				deployCmd := exec.Command(getJoblinBinary(), deployArgs...)
 				deployCmd.Dir = tempDir
@@ -199,7 +199,7 @@ print("This will cause a syntax error")
 				deployArgs := []string{
 					"deploy", "simple.py",
 					"--webhook", tc.webhookURL,
-					"--output", "json",
+					"--json",
 				}
 				deployCmd := exec.Command(getJoblinBinary(), deployArgs...)
 				deployCmd.Dir = tempDir
@@ -248,7 +248,7 @@ users:
 		os.Setenv("KUBECONFIG", invalidKubeconfigPath)
 		defer os.Unsetenv("KUBECONFIG")
 
-		deployCmd := exec.Command(getJoblinBinary(), "deploy", "simple.py", "--output", "json")
+		deployCmd := exec.Command(getJoblinBinary(), "deploy", "simple.py", "--json")
 		deployCmd.Dir = tempDir
 		deployOutput, err := deployCmd.CombinedOutput()
 
@@ -317,7 +317,7 @@ users:
 		require.NoError(t, os.WriteFile(scriptPath, []byte("print('test')"), 0755))
 
 		// Deploy with invalid configuration that should fail after partial creation
-		deployCmd := exec.Command(getJoblinBinary(), "deploy", "simple.py", "--cpu", "invalid", "--output", "json")
+		deployCmd := exec.Command(getJoblinBinary(), "deploy", "simple.py", "--cpu", "invalid", "--json")
 		deployCmd.Dir = tempDir
 		deployOutput, err := deployCmd.CombinedOutput()
 

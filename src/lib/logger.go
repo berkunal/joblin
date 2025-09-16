@@ -47,8 +47,8 @@ func NewLogger(component string) *Logger {
 		},
 	})
 
-	// Set output to stdout
-	logger.SetOutput(os.Stdout)
+	// Set output to stderr
+	logger.SetOutput(os.Stderr)
 
 	// Set default level
 	logger.SetLevel(logrus.InfoLevel)

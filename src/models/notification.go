@@ -77,7 +77,7 @@ func NewNotification(jobID string, notificationType NotificationType, webhookURL
 		return nil, fmt.Errorf(ErrInvalidNotificationType, notificationType)
 	}
 
-	if err := validateWebhookURL(webhookURL); err != nil {
+	if err := ValidateWebhookURL(webhookURL); err != nil {
 		return nil, fmt.Errorf("invalid webhook URL: %w", err)
 	}
 
@@ -99,7 +99,7 @@ func (n *Notification) Validate() error {
 		return fmt.Errorf(ErrInvalidNotificationType, n.Type)
 	}
 
-	if err := validateWebhookURL(n.WebhookURL); err != nil {
+	if err := ValidateWebhookURL(n.WebhookURL); err != nil {
 		return fmt.Errorf("invalid webhook URL: %w", err)
 	}
 
@@ -222,22 +222,28 @@ func (n *Notification) Clone() *Notification {
 	return clone
 }
 
-func validateWebhookURL(webhookURL string) error {
+func ValidateWebhookURL(webhookURL string) error {
 	if webhookURL == "" {
 		return fmt.Errorf("webhook URL cannot be empty")
 	}
 
 	parsedURL, err := url.Parse(webhookURL)
 	if err != nil {
-		return fmt.Errorf("invalid URL format: %w", err)
+		return fmt.Errorf("invalid webhook URL format: %w", err)
 	}
 
-	if parsedURL.Scheme != "https" {
-		return fmt.Errorf("webhook URL must use HTTPS")
+	// Check for unsupported protocols
+	if parsedURL.Scheme != "https" && parsedURL.Scheme != "http" {
+		return fmt.Errorf("unsupported protocol: %s", parsedURL.Scheme)
 	}
 
 	if parsedURL.Host == "" {
 		return fmt.Errorf("webhook URL must have a valid host")
+	}
+
+	// Additional validation for production use - suggest HTTPS
+	if parsedURL.Scheme == "http" {
+		return fmt.Errorf("webhook URL should use HTTPS for security")
 	}
 
 	return nil
