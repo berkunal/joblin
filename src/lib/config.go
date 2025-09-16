@@ -11,7 +11,6 @@ import (
 	"github.com/berkunal/joblin/src/services/k8slib"
 	"github.com/berkunal/joblin/src/services/notifylib"
 	"github.com/berkunal/joblin/src/services/storage"
-	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 )
@@ -20,7 +19,8 @@ type ConfigManager struct {
 	cliConfig       *models.CLIConfig
 	kubeConfigPath  string
 	currentContext  string
-	logger          *logrus.Logger
+	logger          *Logger
+	services        *ServiceContainer
 }
 
 type ServiceContainer struct {
@@ -29,7 +29,7 @@ type ServiceContainer struct {
 	K8sService       *k8slib.K8sService
 	Notification     *notifylib.NotificationService
 	JobService       *joblib.JobService
-	Logger           *logrus.Logger
+	Logger           *Logger
 }
 
 type ConfigOptions struct {
@@ -42,25 +42,21 @@ type ConfigOptions struct {
 }
 
 func NewConfigManager(options *ConfigOptions) (*ConfigManager, error) {
-	// Initialize logger first
-	logger := logrus.New()
-	logger.SetFormatter(&logrus.TextFormatter{
-		DisableTimestamp: false,
-		FullTimestamp:    true,
-	})
+	// Initialize structured logger
+	logger := NewConsoleLogger("config-manager")
 
 	// Set log level
 	logLevel := determineLogLevel(options)
-	level, err := logrus.ParseLevel(logLevel)
-	if err != nil {
-		return nil, fmt.Errorf("invalid log level: %w", err)
+	if err := logger.SetLevel(logLevel); err != nil {
+		return nil, NewConfigurationError("INVALID_LOG_LEVEL",
+			fmt.Sprintf("Invalid log level: %s", logLevel)).WithCause(err)
 	}
-	logger.SetLevel(level)
 
 	// Load CLI configuration
 	cliConfig, err := loadCLIConfig(options.ConfigFile, logger)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load CLI configuration: %w", err)
+		return nil, NewConfigurationError("CONFIG_LOAD_FAILED",
+			"Failed to load CLI configuration").WithCause(err).WithContext("config_file", options.ConfigFile)
 	}
 
 	// Override with command-line options
@@ -72,7 +68,10 @@ func NewConfigManager(options *ConfigOptions) (*ConfigManager, error) {
 	// Validate kubeconfig and context
 	currentContext, err := validateKubeConfig(kubeConfigPath, options.Context, logger)
 	if err != nil {
-		return nil, fmt.Errorf("kubeconfig validation failed: %w", err)
+		return nil, NewKubernetesError("KUBECONFIG_INVALID",
+			"Kubeconfig validation failed").WithCause(err).
+			WithContext("kubeconfig_path", kubeConfigPath).
+			WithContext("context", options.Context)
 	}
 
 	return &ConfigManager{
@@ -84,51 +83,73 @@ func NewConfigManager(options *ConfigOptions) (*ConfigManager, error) {
 }
 
 func (cm *ConfigManager) InitializeServices() (*ServiceContainer, error) {
-	cm.logger.Debug("Initializing services...")
+	ctx := WithOperationContext(context.Background(), "initialize-services")
 
-	// Ensure data directory exists
-	if err := cm.cliConfig.EnsureDataDirectory(); err != nil {
-		return nil, fmt.Errorf("failed to create data directory: %w", err)
-	}
-
-	// Initialize storage service
-	storageService, err := storage.NewStorageService(cm.cliConfig.GetDatabasePath())
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize storage service: %w", err)
-	}
-
-	// Initialize Kubernetes service
-	k8sService, err := k8slib.NewK8sService(cm.kubeConfigPath, cm.currentContext)
-	if err != nil {
-		// Try in-cluster config if external config fails
-		cm.logger.Debug("External kubeconfig failed, trying in-cluster config")
-		k8sService, err = k8slib.NewK8sServiceFromCluster()
-		if err != nil {
-			return nil, fmt.Errorf("failed to initialize Kubernetes service: %w", err)
+	err := cm.logger.LogOperation(ctx, "service-initialization", func() error {
+		// Ensure data directory exists
+		if err := cm.cliConfig.EnsureDataDirectory(); err != nil {
+			return NewStorageError("DATA_DIR_CREATE_FAILED",
+				"Failed to create data directory").WithCause(err).
+				WithContext("data_dir", cm.cliConfig.DataDir)
 		}
+
+		// Initialize storage service
+		storageService, err := storage.NewStorageService(cm.cliConfig.GetDatabasePath())
+		if err != nil {
+			return NewStorageError("STORAGE_INIT_FAILED",
+				"Failed to initialize storage service").WithCause(err).
+				WithContext("database_path", cm.cliConfig.GetDatabasePath())
+		}
+
+		// Initialize Kubernetes service
+		k8sService, err := k8slib.NewK8sService(cm.kubeConfigPath, cm.currentContext)
+		if err != nil {
+			// Try in-cluster config if external config fails
+			cm.logger.WithContext(ctx).Debug("External kubeconfig failed, trying in-cluster config")
+			k8sService, err = k8slib.NewK8sServiceFromCluster()
+			if err != nil {
+				return NewKubernetesError("K8S_INIT_FAILED",
+					"Failed to initialize Kubernetes service").WithCause(err).
+					WithContext("kubeconfig_path", cm.kubeConfigPath).
+					WithContext("context", cm.currentContext)
+			}
+		}
+
+		// Initialize notification service with proper logger
+		logrusLogger := cm.logger.Logger // Extract underlying logrus logger
+		notificationService := notifylib.NewNotificationService(logrusLogger)
+
+		// Initialize job service (orchestrates all other services)
+		jobService := joblib.NewJobService(storageService, k8sService, notificationService, logrusLogger)
+
+		// Test connections
+		if err := cm.testConnections(k8sService); err != nil {
+			cm.logger.WithContext(ctx).WithError(err).Warn("Service connection test failed")
+		}
+
+		// Store services in container
+		cm.services = &ServiceContainer{
+			Config:       cm.cliConfig,
+			Storage:      storageService,
+			K8sService:   k8sService,
+			Notification: notificationService,
+			JobService:   jobService,
+			Logger:       cm.logger,
+		}
+
+		cm.logger.WithContext(ctx).Info("All services initialized successfully")
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
-	// Initialize notification service
-	notificationService := notifylib.NewNotificationService(cm.logger)
-
-	// Initialize job service (orchestrates all other services)
-	jobService := joblib.NewJobService(storageService, k8sService, notificationService, cm.logger)
-
-	// Test connections
-	if err := cm.testConnections(k8sService); err != nil {
-		cm.logger.Warnf("Service connection test failed: %v", err)
+	if cm.services == nil {
+		return nil, NewInternalError("SERVICE_INIT_INCOMPLETE", "Service initialization did not complete properly")
 	}
 
-	cm.logger.Info("All services initialized successfully")
-
-	return &ServiceContainer{
-		Config:       cm.cliConfig,
-		Storage:      storageService,
-		K8sService:   k8sService,
-		Notification: notificationService,
-		JobService:   jobService,
-		Logger:       cm.logger,
-	}, nil
+	return cm.services, nil
 }
 
 func (cm *ConfigManager) GetEffectiveNamespace(override string) string {
@@ -163,15 +184,17 @@ func determineLogLevel(options *ConfigOptions) string {
 	return "info"
 }
 
-func loadCLIConfig(configFile string, logger *logrus.Logger) (*models.CLIConfig, error) {
+func loadCLIConfig(configFile string, logger *Logger) (*models.CLIConfig, error) {
 	var config *models.CLIConfig
 	var err error
 
+	ctx := context.Background()
+
 	if configFile != "" {
-		logger.Debugf("Loading configuration from: %s", configFile)
+		logger.WithContext(ctx).WithField("config_file", configFile).Debug("Loading configuration from file")
 		config, err = models.LoadCLIConfig(configFile)
 	} else {
-		logger.Debug("Loading default configuration")
+		logger.WithContext(ctx).Debug("Loading default configuration")
 		config, err = models.LoadDefaultCLIConfig()
 	}
 
@@ -179,7 +202,7 @@ func loadCLIConfig(configFile string, logger *logrus.Logger) (*models.CLIConfig,
 		return nil, err
 	}
 
-	logger.Debugf("Configuration loaded from: %s", config.GetConfigPath())
+	logger.WithContext(ctx).WithField("config_path", config.GetConfigPath()).Debug("Configuration loaded successfully")
 	return config, nil
 }
 
@@ -217,21 +240,25 @@ func determineKubeConfigPath(kubeConfigFlag string) string {
 	return ""
 }
 
-func validateKubeConfig(kubeConfigPath, contextOverride string, logger *logrus.Logger) (string, error) {
+func validateKubeConfig(kubeConfigPath, contextOverride string, logger *Logger) (string, error) {
+	ctx := context.Background()
+
 	if kubeConfigPath == "" {
-		logger.Debug("No kubeconfig path specified, will try in-cluster config")
+		logger.WithContext(ctx).Debug("No kubeconfig path specified, will try in-cluster config")
 		return "", nil
 	}
 
 	// Check if kubeconfig file exists
 	if _, err := os.Stat(kubeConfigPath); os.IsNotExist(err) {
-		return "", fmt.Errorf("kubeconfig file not found: %s", kubeConfigPath)
+		return "", NewKubernetesError("KUBECONFIG_NOT_FOUND",
+			"Kubeconfig file not found").WithContext("kubeconfig_path", kubeConfigPath)
 	}
 
 	// Load kubeconfig to validate and get context
 	config, err := clientcmd.LoadFromFile(kubeConfigPath)
 	if err != nil {
-		return "", fmt.Errorf("failed to load kubeconfig: %w", err)
+		return "", NewKubernetesError("KUBECONFIG_LOAD_FAILED",
+			"Failed to load kubeconfig").WithCause(err).WithContext("kubeconfig_path", kubeConfigPath)
 	}
 
 	// Determine effective context
@@ -243,22 +270,32 @@ func validateKubeConfig(kubeConfigPath, contextOverride string, logger *logrus.L
 	// Validate context exists
 	if effectiveContext != "" {
 		if _, exists := config.Contexts[effectiveContext]; !exists {
-			return "", fmt.Errorf("context '%s' not found in kubeconfig", effectiveContext)
+			return "", NewKubernetesError("CONTEXT_NOT_FOUND",
+				"Kubernetes context not found in kubeconfig").
+				WithContext("context", effectiveContext).
+				WithContext("kubeconfig_path", kubeConfigPath)
 		}
 	}
 
-	logger.Debugf("Using kubeconfig: %s, context: %s", kubeConfigPath, effectiveContext)
+	logger.WithContext(ctx).WithFields(map[string]interface{}{
+		"kubeconfig_path": kubeConfigPath,
+		"context":         effectiveContext,
+	}).Debug("Kubeconfig validated successfully")
 	return effectiveContext, nil
 }
 
 func (cm *ConfigManager) testConnections(k8sService *k8slib.K8sService) error {
 	// Test Kubernetes connection
-	ctx := context.Background()
+	ctx := WithOperationContext(context.Background(), "connection-test")
+
 	if err := k8sService.TestConnection(ctx); err != nil {
-		return fmt.Errorf("Kubernetes connection test failed: %w", err)
+		return NewKubernetesError("CONNECTION_TEST_FAILED",
+			"Kubernetes connection test failed").WithCause(err).
+			WithContext("kubeconfig_path", cm.kubeConfigPath).
+			WithContext("context", cm.currentContext)
 	}
 
-	cm.logger.Debug("Kubernetes connection test successful")
+	cm.logger.WithContext(ctx).Debug("Kubernetes connection test successful")
 	return nil
 }
 

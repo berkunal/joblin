@@ -27,9 +27,10 @@ type GlobalFlags struct {
 }
 
 var (
-	globalFlags = &GlobalFlags{}
-	cliContext  *lib.ServiceContainer
-	configMgr   *lib.ConfigManager
+	globalFlags  = &GlobalFlags{}
+	cliContext   *lib.ServiceContainer
+	configMgr    *lib.ConfigManager
+	errorHandler *lib.CLIErrorHandler
 )
 
 var rootCmd = &cobra.Command{
@@ -137,10 +138,14 @@ func initializeCLI() error {
 		return fmt.Errorf("failed to initialize services: %w", err)
 	}
 
+	// Initialize error handler
+	errorHandler = lib.NewCLIErrorHandler(cliContext.Logger, globalFlags.JSONOutput)
+
 	// Log configuration info if verbose
 	if globalFlags.Verbose {
 		info := configMgr.GetKubeConfigInfo()
-		cliContext.Logger.WithFields(info).Debug("Configuration loaded successfully")
+		cliContext.Logger.WithContext(context.Background()).
+			WithFields(info).Debug("Configuration loaded successfully")
 	}
 
 	return nil
@@ -176,31 +181,41 @@ func PrintJSON(data interface{}) error {
 }
 
 func PrintError(err error) {
-	if globalFlags.JSONOutput {
-		errorData := map[string]interface{}{
-			"error": err.Error(),
-			"success": false,
-		}
-		PrintJSON(errorData)
+	if errorHandler != nil {
+		errorHandler.HandleError(GetContext(), err, "unknown")
 	} else {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		// Fallback if error handler not initialized
+		if globalFlags.JSONOutput {
+			errorData := map[string]interface{}{
+				"error":   err.Error(),
+				"success": false,
+			}
+			PrintJSON(errorData)
+		} else {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		}
 	}
 }
 
 func PrintSuccess(message string, data interface{}) {
-	if globalFlags.JSONOutput {
-		result := map[string]interface{}{
-			"success": true,
-			"message": message,
-		}
-		if data != nil {
-			result["data"] = data
-		}
-		PrintJSON(result)
+	if errorHandler != nil {
+		errorHandler.HandleSuccess(GetContext(), message, data)
 	} else {
-		fmt.Println(message)
-		if data != nil && globalFlags.Verbose {
-			fmt.Printf("Details: %+v\n", data)
+		// Fallback if error handler not initialized
+		if globalFlags.JSONOutput {
+			result := map[string]interface{}{
+				"success": true,
+				"message": message,
+			}
+			if data != nil {
+				result["data"] = data
+			}
+			PrintJSON(result)
+		} else {
+			fmt.Println(message)
+			if data != nil && globalFlags.Verbose {
+				fmt.Printf("Details: %+v\n", data)
+			}
 		}
 	}
 }
@@ -213,8 +228,23 @@ func GetContext() context.Context {
 }
 
 func ValidateJobID(jobID string) error {
+	if errorHandler != nil {
+		return errorHandler.RequireJobID(jobID)
+	}
 	if jobID == "" {
 		return fmt.Errorf("job ID is required")
 	}
 	return nil
+}
+
+func GetErrorHandler() *lib.CLIErrorHandler {
+	return errorHandler
+}
+
+func CreateOperationContext(operation string) context.Context {
+	return lib.WithOperationContext(GetContext(), operation)
+}
+
+func CreateJobContext(jobID, jobName, namespace string) context.Context {
+	return lib.WithJobContext(GetContext(), jobID, jobName, namespace)
 }
