@@ -43,13 +43,13 @@ func TestKubernetesJobCreation(t *testing.T) {
 				TTL: 24 * time.Hour,
 			},
 			expectJobFields: map[string]interface{}{
-				"metadata.name":                        "joblin-12345678",
-				"metadata.namespace":                   "default",
+				"metadata.name":                          "joblin-12345678",
+				"metadata.namespace":                     "default",
 				"metadata.labels.app.kubernetes.io/name": "joblin",
-				"metadata.labels.joblin.io/job-id":    "12345678-1234-4234-8234-123456789012",
-				"spec.ttlSecondsAfterFinished":         int32(86400),
-				"spec.backoffLimit":                    int32(3),
-				"spec.activeDeadlineSeconds":           int32(3600),
+				"metadata.labels.joblin.io/job-id":       "12345678-1234-4234-8234-123456789012",
+				"spec.ttlSecondsAfterFinished":           int32(86400),
+				"spec.backoffLimit":                      int32(3),
+				"spec.activeDeadlineSeconds":             int32(3600),
 			},
 			expectConfigFields: map[string]interface{}{
 				"metadata.name":      "joblin-script-12345678",
@@ -204,21 +204,21 @@ func TestKubernetesJobCreation(t *testing.T) {
 // This test MUST FAIL until the Kubernetes integration is implemented
 func TestKubernetesJobNaming(t *testing.T) {
 	tests := []struct {
-		name              string
-		jobID             string
-		expectedJobName   string
+		name               string
+		jobID              string
+		expectedJobName    string
 		expectedConfigName string
 	}{
 		{
-			name:              "standard_uuid",
-			jobID:             "12345678-1234-4234-8234-123456789012",
-			expectedJobName:   "joblin-12345678",
+			name:               "standard_uuid",
+			jobID:              "12345678-1234-4234-8234-123456789012",
+			expectedJobName:    "joblin-12345678",
 			expectedConfigName: "joblin-script-12345678",
 		},
 		{
-			name:              "another_uuid",
-			jobID:             "abcdef01-2345-6789-abcd-ef0123456789",
-			expectedJobName:   "joblin-abcdef01",
+			name:               "another_uuid",
+			jobID:              "abcdef01-2345-6789-abcd-ef0123456789",
+			expectedJobName:    "joblin-abcdef01",
 			expectedConfigName: "joblin-script-abcdef01",
 		},
 	}
@@ -244,10 +244,10 @@ func TestKubernetesJobNaming(t *testing.T) {
 
 			k8sService := NewK8sService(client)
 			jobSpec := JobSpec{
-				ID:            tt.jobID,
-				Name:          "test-job",
-				ScriptContent: "print('test')",
-				Namespace:     "default",
+				ID:             tt.jobID,
+				Name:           "test-job",
+				ScriptContent:  "print('test')",
+				Namespace:      "default",
 				ResourceLimits: ResourceLimits{CPU: "100m", Memory: "128Mi"},
 			}
 

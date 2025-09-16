@@ -131,7 +131,7 @@ func TestJoblinDeployCommand(t *testing.T) {
 			args:           []string{"deploy", "nonexistent.py"},
 			expectExitCode: 1,
 			expectError:    "Script file not found or unreadable",
-			setupScript:   func(t *testing.T) string { return "" }, // No setup needed
+			setupScript:    func(t *testing.T) string { return "" }, // No setup needed
 		},
 		{
 			name:           "deploy_invalid_cpu",

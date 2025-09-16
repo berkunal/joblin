@@ -131,9 +131,9 @@ func runTerminate(cmd *cobra.Command, args []string) error {
 	// Output success result
 	if globalFlags.JSONOutput {
 		result := map[string]interface{}{
-			"success":         true,
-			"message":         "Job terminated successfully",
-			"job":             updatedJob,
+			"success":          true,
+			"message":          "Job terminated successfully",
+			"job":              updatedJob,
 			"termination_time": duration.Seconds(),
 		}
 		PrintJSON(result)
@@ -165,4 +165,3 @@ func runTerminate(cmd *cobra.Command, args []string) error {
 
 	return nil
 }
-

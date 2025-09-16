@@ -19,11 +19,11 @@ import (
 )
 
 const (
-	DefaultPythonImage = "python:3.11-slim"
-	JoblinManagedLabel = "app.kubernetes.io/managed-by"
-	JoblinNameLabel    = "app.kubernetes.io/name"
+	DefaultPythonImage  = "python:3.11-slim"
+	JoblinManagedLabel  = "app.kubernetes.io/managed-by"
+	JoblinNameLabel     = "app.kubernetes.io/name"
 	JoblinInstanceLabel = "app.kubernetes.io/instance"
-	JoblinManagedValue = "joblin"
+	JoblinManagedValue  = "joblin"
 )
 
 type K8sService struct {
@@ -179,8 +179,8 @@ func (k *K8sService) buildKubernetesJob(job *models.Job, configMapName string) (
 					RestartPolicy: corev1.RestartPolicyNever,
 					InitContainers: []corev1.Container{
 						{
-							Name:  "install-deps",
-							Image: DefaultPythonImage,
+							Name:    "install-deps",
+							Image:   DefaultPythonImage,
 							Command: initCommand,
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -193,8 +193,8 @@ func (k *K8sService) buildKubernetesJob(job *models.Job, configMapName string) (
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  "python-script",
-							Image: DefaultPythonImage,
+							Name:    "python-script",
+							Image:   DefaultPythonImage,
 							Command: []string{"python", "/app/script.py"},
 							VolumeMounts: []corev1.VolumeMount{
 								{

@@ -16,29 +16,29 @@ import (
 )
 
 type ConfigManager struct {
-	cliConfig       *models.CLIConfig
-	kubeConfigPath  string
-	currentContext  string
-	logger          *Logger
-	services        *ServiceContainer
+	cliConfig      *models.CLIConfig
+	kubeConfigPath string
+	currentContext string
+	logger         *Logger
+	services       *ServiceContainer
 }
 
 type ServiceContainer struct {
-	Config           *models.CLIConfig
-	Storage          *storage.StorageService
-	K8sService       *k8slib.K8sService
-	Notification     *notifylib.NotificationService
-	JobService       *joblib.JobService
-	Logger           *Logger
+	Config       *models.CLIConfig
+	Storage      *storage.StorageService
+	K8sService   *k8slib.K8sService
+	Notification *notifylib.NotificationService
+	JobService   *joblib.JobService
+	Logger       *Logger
 }
 
 type ConfigOptions struct {
-	ConfigFile     string
-	KubeConfig     string
-	Context        string
-	Namespace      string
-	LogLevel       string
-	Verbose        bool
+	ConfigFile string
+	KubeConfig string
+	Context    string
+	Namespace  string
+	LogLevel   string
+	Verbose    bool
 }
 
 func NewConfigManager(options *ConfigOptions) (*ConfigManager, error) {
@@ -307,7 +307,7 @@ func (cm *ConfigManager) GetKubeConfigInfo() map[string]interface{} {
 	return map[string]interface{}{
 		"kubeconfig_path": cm.kubeConfigPath,
 		"current_context": cm.currentContext,
-		"namespace":      cm.cliConfig.DefaultNamespace,
-		"data_dir":       cm.cliConfig.DataDir,
+		"namespace":       cm.cliConfig.DefaultNamespace,
+		"data_dir":        cm.cliConfig.DataDir,
 	}
 }

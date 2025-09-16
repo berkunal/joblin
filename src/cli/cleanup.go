@@ -8,12 +8,12 @@ import (
 )
 
 var cleanupFlags struct {
-	DryRun             bool
-	Force              bool
-	Age                string
-	IncludeRunning     bool
+	DryRun               bool
+	Force                bool
+	Age                  string
+	IncludeRunning       bool
 	IncludeNotifications bool
-	Namespace          string
+	Namespace            string
 }
 
 var cleanupCmd = &cobra.Command{
@@ -158,7 +158,7 @@ func runNotificationCleanup() error {
 
 	if globalFlags.JSONOutput {
 		result := map[string]interface{}{
-			"success":                true,
+			"success":               true,
 			"cleaned_notifications": cleanedNotifications,
 			"duration_seconds":      duration.Seconds(),
 		}
@@ -190,7 +190,7 @@ func showCleanupPreview(jobsToCleanup []*jobInfo) error {
 		if globalFlags.JSONOutput {
 			result := map[string]interface{}{
 				"jobs_to_cleanup": 0,
-				"message":        "No jobs found that meet cleanup criteria",
+				"message":         "No jobs found that meet cleanup criteria",
 			}
 			PrintJSON(result)
 		} else {
@@ -203,7 +203,7 @@ func showCleanupPreview(jobsToCleanup []*jobInfo) error {
 		result := map[string]interface{}{
 			"dry_run":         true,
 			"jobs_to_cleanup": len(jobsToCleanup),
-			"jobs":           jobsToCleanup,
+			"jobs":            jobsToCleanup,
 		}
 		PrintJSON(result)
 		return nil
@@ -228,9 +228,9 @@ func performCleanup(ctx interface{}, jobsToCleanup []*jobInfo, startTime time.Ti
 	if len(jobsToCleanup) == 0 {
 		if globalFlags.JSONOutput {
 			result := map[string]interface{}{
-				"success":         true,
-				"cleaned_jobs":    0,
-				"message":        "No jobs to clean up",
+				"success":          true,
+				"cleaned_jobs":     0,
+				"message":          "No jobs to clean up",
 				"duration_seconds": time.Since(startTime).Seconds(),
 			}
 			PrintJSON(result)

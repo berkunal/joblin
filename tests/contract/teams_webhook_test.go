@@ -17,16 +17,16 @@ import (
 
 // Test constants to reduce duplication
 const (
-	testJobID1           = "12345678-1234-4234-8234-123456789012"
-	testJobID2           = "12345678-1234-4234-8234-123456789013"
-	testJobID3           = "12345678-1234-4234-8234-123456789014"
-	testJobID4           = "12345678-1234-4234-8234-123456789015"
-	testScriptPy         = "test_script.py"
-	testCluster          = "test-cluster"
-	testWebhookURL       = "https://teams.microsoft.com/webhook/test"
-	schemaContext        = "http://schema.org/extensions"
-	jobIDFieldName       = "Job ID"
-	moduleNotFoundError  = "ModuleNotFoundError: No module named 'nonexistent'"
+	testJobID1          = "12345678-1234-4234-8234-123456789012"
+	testJobID2          = "12345678-1234-4234-8234-123456789013"
+	testJobID3          = "12345678-1234-4234-8234-123456789014"
+	testJobID4          = "12345678-1234-4234-8234-123456789015"
+	testScriptPy        = "test_script.py"
+	testCluster         = "test-cluster"
+	testWebhookURL      = "https://teams.microsoft.com/webhook/test"
+	schemaContext       = "http://schema.org/extensions"
+	jobIDFieldName      = "Job ID"
+	moduleNotFoundError = "ModuleNotFoundError: No module named 'nonexistent'"
 )
 
 // TestTeamsWebhookNotifications tests the contract for Teams webhook notifications
@@ -43,16 +43,16 @@ func TestTeamsWebhookNotifications(t *testing.T) {
 		{
 			name: "success_notification",
 			jobSpec: JobNotification{
-				JobID:           testJobID1,
-				Name:            "test-job",
-				ScriptFilename:  testScriptPy,
-				Status:          "completed",
-				Duration:        "2m15s",
+				JobID:             testJobID1,
+				Name:              "test-job",
+				ScriptFilename:    testScriptPy,
+				Status:            "completed",
+				Duration:          "2m15s",
 				KubernetesContext: testCluster,
-				Namespace:       "default",
-				ExitCode:        0,
-				CompletedAt:     time.Date(2025, 9, 15, 10, 35, 0, 0, time.UTC),
-				WebhookURL:      testWebhookURL,
+				Namespace:         "default",
+				ExitCode:          0,
+				CompletedAt:       time.Date(2025, 9, 15, 10, 35, 0, 0, time.UTC),
+				WebhookURL:        testWebhookURL,
 			},
 			expectedMessageCard: TeamsMessageCard{
 				Type:       "MessageCard",
@@ -82,18 +82,18 @@ func TestTeamsWebhookNotifications(t *testing.T) {
 		{
 			name: "failure_notification",
 			jobSpec: JobNotification{
-				JobID:           testJobID2,
-				Name:            "failing-job",
-				ScriptFilename:  "failing_script.py",
-				Status:          "failed",
-				Duration:        "1m30s",
+				JobID:             testJobID2,
+				Name:              "failing-job",
+				ScriptFilename:    "failing_script.py",
+				Status:            "failed",
+				Duration:          "1m30s",
 				KubernetesContext: testCluster,
-				Namespace:       "default",
-				ExitCode:        1,
-				CompletedAt:     time.Date(2025, 9, 15, 10, 37, 0, 0, time.UTC),
-				ErrorMessage:    moduleNotFoundError,
-				LastLogLines:    []string{"Traceback (most recent call last):", "  File \"failing_script.py\", line 1, in <module>", "    import nonexistent", moduleNotFoundError},
-				WebhookURL:      testWebhookURL,
+				Namespace:         "default",
+				ExitCode:          1,
+				CompletedAt:       time.Date(2025, 9, 15, 10, 37, 0, 0, time.UTC),
+				ErrorMessage:      moduleNotFoundError,
+				LastLogLines:      []string{"Traceback (most recent call last):", "  File \"failing_script.py\", line 1, in <module>", "    import nonexistent", moduleNotFoundError},
+				WebhookURL:        testWebhookURL,
 			},
 			expectedMessageCard: TeamsMessageCard{
 				Type:       "MessageCard",
@@ -118,8 +118,8 @@ func TestTeamsWebhookNotifications(t *testing.T) {
 						Markdown: true,
 					},
 					{
-						Title: "Last Log Entries",
-						Text:  "```\nTraceback (most recent call last):\n  File \"failing_script.py\", line 1, in <module>\n    import nonexistent\nModuleNotFoundError: No module named 'nonexistent'\n```",
+						Title:    "Last Log Entries",
+						Text:     "```\nTraceback (most recent call last):\n  File \"failing_script.py\", line 1, in <module>\n    import nonexistent\nModuleNotFoundError: No module named 'nonexistent'\n```",
 						Markdown: true,
 					},
 				},
@@ -129,16 +129,16 @@ func TestTeamsWebhookNotifications(t *testing.T) {
 		{
 			name: "termination_notification",
 			jobSpec: JobNotification{
-				JobID:           testJobID3,
-				Name:            "terminated-job",
-				ScriptFilename:  "long_running.py",
-				Status:          "terminated",
-				Duration:        "45s",
+				JobID:             testJobID3,
+				Name:              "terminated-job",
+				ScriptFilename:    "long_running.py",
+				Status:            "terminated",
+				Duration:          "45s",
 				KubernetesContext: testCluster,
-				Namespace:       "default",
-				TerminatedAt:    time.Date(2025, 9, 15, 10, 40, 0, 0, time.UTC),
-				TerminatedBy:    "user@example.com",
-				WebhookURL:      testWebhookURL,
+				Namespace:         "default",
+				TerminatedAt:      time.Date(2025, 9, 15, 10, 40, 0, 0, time.UTC),
+				TerminatedBy:      "user@example.com",
+				WebhookURL:        testWebhookURL,
 			},
 			expectedMessageCard: TeamsMessageCard{
 				Type:       "MessageCard",
@@ -168,16 +168,16 @@ func TestTeamsWebhookNotifications(t *testing.T) {
 		{
 			name: "rate_limited_response",
 			jobSpec: JobNotification{
-				JobID:           "12345678-1234-4234-8234-123456789015",
-				Name:            "rate-limited-job",
-				ScriptFilename:  testScriptPy,
-				Status:          "completed",
-				Duration:        "1m",
+				JobID:             "12345678-1234-4234-8234-123456789015",
+				Name:              "rate-limited-job",
+				ScriptFilename:    testScriptPy,
+				Status:            "completed",
+				Duration:          "1m",
 				KubernetesContext: testCluster,
-				Namespace:       "default",
-				ExitCode:        0,
-				CompletedAt:     time.Date(2025, 9, 15, 10, 35, 0, 0, time.UTC),
-				WebhookURL:      testWebhookURL,
+				Namespace:         "default",
+				ExitCode:          0,
+				CompletedAt:       time.Date(2025, 9, 15, 10, 35, 0, 0, time.UTC),
+				WebhookURL:        testWebhookURL,
 			},
 			serverResponse: http.StatusTooManyRequests,
 			expectError:    "rate limited",
@@ -185,16 +185,16 @@ func TestTeamsWebhookNotifications(t *testing.T) {
 		{
 			name: "invalid_webhook_url",
 			jobSpec: JobNotification{
-				JobID:           "12345678-1234-4234-8234-123456789016",
-				Name:            "invalid-webhook-job",
-				ScriptFilename:  testScriptPy,
-				Status:          "completed",
-				Duration:        "1m",
+				JobID:             "12345678-1234-4234-8234-123456789016",
+				Name:              "invalid-webhook-job",
+				ScriptFilename:    testScriptPy,
+				Status:            "completed",
+				Duration:          "1m",
 				KubernetesContext: testCluster,
-				Namespace:       "default",
-				ExitCode:        0,
-				CompletedAt:     time.Date(2025, 9, 15, 10, 35, 0, 0, time.UTC),
-				WebhookURL:      "https://teams.microsoft.com/webhook/expired",
+				Namespace:         "default",
+				ExitCode:          0,
+				CompletedAt:       time.Date(2025, 9, 15, 10, 35, 0, 0, time.UTC),
+				WebhookURL:        "https://teams.microsoft.com/webhook/expired",
 			},
 			serverResponse: http.StatusBadRequest,
 			expectError:    "invalid webhook URL",
@@ -202,16 +202,16 @@ func TestTeamsWebhookNotifications(t *testing.T) {
 		{
 			name: "timeout_scenario",
 			jobSpec: JobNotification{
-				JobID:           "12345678-1234-4234-8234-123456789017",
-				Name:            "timeout-job",
-				ScriptFilename:  testScriptPy,
-				Status:          "completed",
-				Duration:        "1m",
+				JobID:             "12345678-1234-4234-8234-123456789017",
+				Name:              "timeout-job",
+				ScriptFilename:    testScriptPy,
+				Status:            "completed",
+				Duration:          "1m",
 				KubernetesContext: testCluster,
-				Namespace:       "default",
-				ExitCode:        0,
-				CompletedAt:     time.Date(2025, 9, 15, 10, 35, 0, 0, time.UTC),
-				WebhookURL:      "https://teams.microsoft.com/webhook/timeout",
+				Namespace:         "default",
+				ExitCode:          0,
+				CompletedAt:       time.Date(2025, 9, 15, 10, 35, 0, 0, time.UTC),
+				WebhookURL:        "https://teams.microsoft.com/webhook/timeout",
 			},
 			serverResponse: http.StatusOK,
 			serverDelay:    35 * time.Second, // Longer than 30s timeout
@@ -314,50 +314,50 @@ func TestTeamsWebhookNotifications(t *testing.T) {
 // This test MUST FAIL until the Teams webhook retry logic is implemented
 func TestTeamsWebhookRetryLogic(t *testing.T) {
 	tests := []struct {
-		name                string
-		serverResponses     []int           // Sequence of HTTP status codes
-		serverDelays        []time.Duration // Delays for each response
-		expectedRetryCount  int
-		expectFinalSuccess  bool
-		expectError         string
+		name               string
+		serverResponses    []int           // Sequence of HTTP status codes
+		serverDelays       []time.Duration // Delays for each response
+		expectedRetryCount int
+		expectFinalSuccess bool
+		expectError        string
 	}{
 		{
-			name:            "success_on_first_attempt",
-			serverResponses: []int{http.StatusOK},
+			name:               "success_on_first_attempt",
+			serverResponses:    []int{http.StatusOK},
 			expectedRetryCount: 0,
 			expectFinalSuccess: true,
 		},
 		{
-			name:            "success_after_rate_limit",
-			serverResponses: []int{http.StatusTooManyRequests, http.StatusOK},
-			serverDelays:    []time.Duration{0, 0},
+			name:               "success_after_rate_limit",
+			serverResponses:    []int{http.StatusTooManyRequests, http.StatusOK},
+			serverDelays:       []time.Duration{0, 0},
 			expectedRetryCount: 1,
 			expectFinalSuccess: true,
 		},
 		{
-			name:            "success_after_server_error",
-			serverResponses: []int{http.StatusInternalServerError, http.StatusBadGateway, http.StatusOK},
+			name:               "success_after_server_error",
+			serverResponses:    []int{http.StatusInternalServerError, http.StatusBadGateway, http.StatusOK},
 			expectedRetryCount: 2,
 			expectFinalSuccess: true,
 		},
 		{
-			name:            "permanent_failure_bad_request",
-			serverResponses: []int{http.StatusBadRequest},
+			name:               "permanent_failure_bad_request",
+			serverResponses:    []int{http.StatusBadRequest},
 			expectedRetryCount: 0,
 			expectFinalSuccess: false,
-			expectError:     "webhook URL invalid",
+			expectError:        "webhook URL invalid",
 		},
 		{
-			name:            "max_retries_exceeded",
-			serverResponses: []int{http.StatusTooManyRequests, http.StatusTooManyRequests, http.StatusTooManyRequests, http.StatusTooManyRequests, http.StatusTooManyRequests, http.StatusTooManyRequests},
+			name:               "max_retries_exceeded",
+			serverResponses:    []int{http.StatusTooManyRequests, http.StatusTooManyRequests, http.StatusTooManyRequests, http.StatusTooManyRequests, http.StatusTooManyRequests, http.StatusTooManyRequests},
 			expectedRetryCount: 5, // Should stop at max retries
 			expectFinalSuccess: false,
-			expectError:     "max retry attempts exceeded",
+			expectError:        "max retry attempts exceeded",
 		},
 		{
-			name:            "exponential_backoff_timing",
-			serverResponses: []int{http.StatusTooManyRequests, http.StatusTooManyRequests, http.StatusOK},
-			serverDelays:    []time.Duration{0, 0, 0},
+			name:               "exponential_backoff_timing",
+			serverResponses:    []int{http.StatusTooManyRequests, http.StatusTooManyRequests, http.StatusOK},
+			serverDelays:       []time.Duration{0, 0, 0},
 			expectedRetryCount: 2,
 			expectFinalSuccess: true,
 		},
@@ -405,16 +405,16 @@ func TestTeamsWebhookRetryLogic(t *testing.T) {
 
 			// Create test job notification
 			jobNotification := JobNotification{
-				JobID:           testJobID1,
-				Name:            "retry-test-job",
-				ScriptFilename:  testScriptPy,
-				Status:          "completed",
-				Duration:        "1m",
+				JobID:             testJobID1,
+				Name:              "retry-test-job",
+				ScriptFilename:    testScriptPy,
+				Status:            "completed",
+				Duration:          "1m",
 				KubernetesContext: testCluster,
-				Namespace:       "default",
-				ExitCode:        0,
-				CompletedAt:     time.Now(),
-				WebhookURL:      server.URL,
+				Namespace:         "default",
+				ExitCode:          0,
+				CompletedAt:       time.Now(),
+				WebhookURL:        server.URL,
 			}
 
 			// Create the Teams webhook service with retry configuration
@@ -612,12 +612,12 @@ type JobNotification struct {
 
 // TeamsMessageCard represents a Microsoft Teams message card
 type TeamsMessageCard struct {
-	Type         string           `json:"@type"`
-	Context      string           `json:"@context"`
-	ThemeColor   string           `json:"themeColor"`
-	Summary      string           `json:"summary"`
-	Sections     []MessageSection `json:"sections"`
-	PotentialAction []MessageAction `json:"potentialAction,omitempty"`
+	Type            string           `json:"@type"`
+	Context         string           `json:"@context"`
+	ThemeColor      string           `json:"themeColor"`
+	Summary         string           `json:"summary"`
+	Sections        []MessageSection `json:"sections"`
+	PotentialAction []MessageAction  `json:"potentialAction,omitempty"`
 }
 
 // MessageSection represents a section in a Teams message card
@@ -625,10 +625,10 @@ type MessageSection struct {
 	ActivityTitle    string        `json:"activityTitle,omitempty"`
 	ActivitySubtitle string        `json:"activitySubtitle,omitempty"`
 	ActivityImage    string        `json:"activityImage,omitempty"`
-	Facts           []MessageFact  `json:"facts,omitempty"`
-	Title           string         `json:"title,omitempty"`
-	Text            string         `json:"text,omitempty"`
-	Markdown        bool           `json:"markdown,omitempty"`
+	Facts            []MessageFact `json:"facts,omitempty"`
+	Title            string        `json:"title,omitempty"`
+	Text             string        `json:"text,omitempty"`
+	Markdown         bool          `json:"markdown,omitempty"`
 }
 
 // MessageFact represents a fact in a Teams message section

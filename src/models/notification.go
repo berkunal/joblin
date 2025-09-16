@@ -56,16 +56,16 @@ func (nt NotificationType) MarshalJSON() ([]byte, error) {
 }
 
 type Notification struct {
-	JobID       string           `json:"job_id"`
-	Type        NotificationType `json:"type"`
-	SentAt      time.Time        `json:"sent_at"`
-	WebhookURL  string           `json:"webhook_url"`
-	MessageID   string           `json:"message_id,omitempty"`
-	RetryCount  int              `json:"retry_count"`
-	LastError   string           `json:"last_error,omitempty"`
-	JobName     string           `json:"job_name,omitempty"`
-	Duration    string           `json:"duration,omitempty"`
-	ExitCode    *int             `json:"exit_code,omitempty"`
+	JobID      string           `json:"job_id"`
+	Type       NotificationType `json:"type"`
+	SentAt     time.Time        `json:"sent_at"`
+	WebhookURL string           `json:"webhook_url"`
+	MessageID  string           `json:"message_id,omitempty"`
+	RetryCount int              `json:"retry_count"`
+	LastError  string           `json:"last_error,omitempty"`
+	JobName    string           `json:"job_name,omitempty"`
+	Duration   string           `json:"duration,omitempty"`
+	ExitCode   *int             `json:"exit_code,omitempty"`
 }
 
 func NewNotification(jobID string, notificationType NotificationType, webhookURL string) (*Notification, error) {

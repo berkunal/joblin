@@ -9,23 +9,23 @@ import (
 )
 
 type Job struct {
-	ID                  string            `json:"id" bson:"_id"`
-	Name                string            `json:"name"`
-	ScriptPath          string            `json:"script_path"`
-	ScriptContent       []byte            `json:"script_content"`
-	Dependencies        []string          `json:"dependencies"`
-	Status              JobStatus         `json:"status"`
-	ResourceLimits      ResourceSpec      `json:"resource_limits"`
-	CreatedAt           time.Time         `json:"created_at"`
-	StartedAt           *time.Time        `json:"started_at,omitempty"`
-	CompletedAt         *time.Time        `json:"completed_at,omitempty"`
-	KubernetesJobName   string            `json:"kubernetes_job_name"`
-	Namespace           string            `json:"namespace"`
-	ClusterContext      string            `json:"cluster_context"`
-	ExitCode            *int              `json:"exit_code,omitempty"`
-	TTL                 time.Duration     `json:"ttl"`
-	WebhookURL          string            `json:"webhook_url,omitempty"`
-	Labels              map[string]string `json:"labels,omitempty"`
+	ID                string            `json:"id" bson:"_id"`
+	Name              string            `json:"name"`
+	ScriptPath        string            `json:"script_path"`
+	ScriptContent     []byte            `json:"script_content"`
+	Dependencies      []string          `json:"dependencies"`
+	Status            JobStatus         `json:"status"`
+	ResourceLimits    ResourceSpec      `json:"resource_limits"`
+	CreatedAt         time.Time         `json:"created_at"`
+	StartedAt         *time.Time        `json:"started_at,omitempty"`
+	CompletedAt       *time.Time        `json:"completed_at,omitempty"`
+	KubernetesJobName string            `json:"kubernetes_job_name"`
+	Namespace         string            `json:"namespace"`
+	ClusterContext    string            `json:"cluster_context"`
+	ExitCode          *int              `json:"exit_code,omitempty"`
+	TTL               time.Duration     `json:"ttl"`
+	WebhookURL        string            `json:"webhook_url,omitempty"`
+	Labels            map[string]string `json:"labels,omitempty"`
 }
 
 func NewJob(name, scriptPath string, scriptContent []byte, dependencies []string) (*Job, error) {

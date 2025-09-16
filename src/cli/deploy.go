@@ -329,8 +329,8 @@ func runDryRun(request *joblib.JobCreateRequest) error {
 	// Output dry-run results
 	if globalFlags.JSONOutput {
 		dryRunResult := map[string]interface{}{
-			"valid":      true,
-			"job":        job,
+			"valid":        true,
+			"job":          job,
 			"would_create": true,
 		}
 		PrintJSON(dryRunResult)

@@ -21,16 +21,16 @@ type JobService struct {
 }
 
 type JobCreateRequest struct {
-	Name         string
-	ScriptPath   string
+	Name          string
+	ScriptPath    string
 	ScriptContent []byte
-	Dependencies []string
-	Namespace    string
-	Context      string
-	Resources    *models.ResourceSpec
-	TTL          time.Duration
-	WebhookURL   string
-	Labels       map[string]string
+	Dependencies  []string
+	Namespace     string
+	Context       string
+	Resources     *models.ResourceSpec
+	TTL           time.Duration
+	WebhookURL    string
+	Labels        map[string]string
 }
 
 type JobListOptions struct {
@@ -100,9 +100,9 @@ func (js *JobService) CreateJob(ctx context.Context, req *JobCreateRequest) (*mo
 	js.storage.UpdateJob(job)
 
 	js.logger.WithFields(logrus.Fields{
-		"job_id":         job.ID,
-		"k8s_job_name":   job.KubernetesJobName,
-		"namespace":      job.Namespace,
+		"job_id":       job.ID,
+		"k8s_job_name": job.KubernetesJobName,
+		"namespace":    job.Namespace,
 	}).Info("Kubernetes job created successfully")
 
 	go js.monitorJob(context.Background(), job.ID)
@@ -422,7 +422,7 @@ func (js *JobService) CleanupJobs(ctx context.Context) (int, int, error) {
 	}
 
 	js.logger.WithFields(logrus.Fields{
-		"expired_jobs":       expiredJobs,
+		"expired_jobs":      expiredJobs,
 		"old_notifications": oldNotifications,
 	}).Info("Cleanup completed")
 
@@ -446,9 +446,9 @@ func (js *JobService) GetJobStats() (map[string]interface{}, error) {
 	}
 
 	result := map[string]interface{}{
-		"storage_stats":  stats,
-		"status_counts":  statusCounts,
-		"total_jobs":     len(jobs),
+		"storage_stats": stats,
+		"status_counts": statusCounts,
+		"total_jobs":    len(jobs),
 	}
 
 	return result, nil

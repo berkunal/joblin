@@ -267,8 +267,8 @@ users:
 	t.Run("helpful_error_suggestions", func(t *testing.T) {
 		// Test that error messages provide helpful suggestions
 		testCases := []struct {
-			name           string
-			command        []string
+			name                string
+			command             []string
 			expectedSuggestions []string
 		}{
 			{

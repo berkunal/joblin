@@ -20,20 +20,20 @@ const (
 )
 
 type TeamsMessage struct {
-	Type       string                   `json:"@type"`
-	Context    string                   `json:"@context"`
-	ThemeColor string                   `json:"themeColor"`
-	Summary    string                   `json:"summary"`
-	Sections   []TeamsMessageSection    `json:"sections"`
-	Actions    []TeamsMessageAction     `json:"potentialAction,omitempty"`
+	Type       string                `json:"@type"`
+	Context    string                `json:"@context"`
+	ThemeColor string                `json:"themeColor"`
+	Summary    string                `json:"summary"`
+	Sections   []TeamsMessageSection `json:"sections"`
+	Actions    []TeamsMessageAction  `json:"potentialAction,omitempty"`
 }
 
 type TeamsMessageSection struct {
-	ActivityTitle    string                    `json:"activityTitle"`
-	ActivitySubtitle string                    `json:"activitySubtitle,omitempty"`
-	ActivityImage    string                    `json:"activityImage,omitempty"`
-	Facts            []TeamsMessageFact        `json:"facts,omitempty"`
-	Text             string                    `json:"text,omitempty"`
+	ActivityTitle    string             `json:"activityTitle"`
+	ActivitySubtitle string             `json:"activitySubtitle,omitempty"`
+	ActivityImage    string             `json:"activityImage,omitempty"`
+	Facts            []TeamsMessageFact `json:"facts,omitempty"`
+	Text             string             `json:"text,omitempty"`
 }
 
 type TeamsMessageFact struct {
@@ -42,9 +42,9 @@ type TeamsMessageFact struct {
 }
 
 type TeamsMessageAction struct {
-	Type    string                       `json:"@type"`
-	Name    string                       `json:"name"`
-	Targets []TeamsMessageActionTarget   `json:"targets"`
+	Type    string                     `json:"@type"`
+	Name    string                     `json:"name"`
+	Targets []TeamsMessageActionTarget `json:"targets"`
 }
 
 type TeamsMessageActionTarget struct {
@@ -147,7 +147,7 @@ func (n *NotificationService) buildTeamsMessage(notification *models.Notificatio
 			{
 				ActivityTitle:    notification.GetTitle(),
 				ActivitySubtitle: fmt.Sprintf("Job: %s", job.Name),
-				Facts:           facts,
+				Facts:            facts,
 			},
 		},
 	}

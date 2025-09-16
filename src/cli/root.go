@@ -34,8 +34,8 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:     AppName,
-	Short:   "Joblin - Deploy Python scripts to Kubernetes clusters",
+	Use:   AppName,
+	Short: "Joblin - Deploy Python scripts to Kubernetes clusters",
 	Long: `Joblin is a CLI tool that enables developers to deploy Python scripts
 to Kubernetes clusters easily. It provides job lifecycle management
 (create, monitor, terminate) with Teams webhook notifications.

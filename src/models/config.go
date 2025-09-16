@@ -14,15 +14,15 @@ const (
 )
 
 type CLIConfig struct {
-	DefaultCluster    string        `yaml:"default_cluster" json:"default_cluster"`
-	DefaultNamespace  string        `yaml:"default_namespace" json:"default_namespace"`
-	DefaultResources  ResourceSpec  `yaml:"default_resources" json:"default_resources"`
-	DefaultTTL        time.Duration `yaml:"default_ttl" json:"default_ttl"`
-	TeamsWebhookURL   string        `yaml:"teams_webhook_url" json:"teams_webhook_url,omitempty"`
-	LogLevel          string        `yaml:"log_level" json:"log_level"`
-	DataDir           string        `yaml:"data_dir" json:"data_dir"`
-	ConfigVersion     string        `yaml:"config_version" json:"config_version"`
-	LastUpdated       time.Time     `yaml:"last_updated" json:"last_updated"`
+	DefaultCluster   string        `yaml:"default_cluster" json:"default_cluster"`
+	DefaultNamespace string        `yaml:"default_namespace" json:"default_namespace"`
+	DefaultResources ResourceSpec  `yaml:"default_resources" json:"default_resources"`
+	DefaultTTL       time.Duration `yaml:"default_ttl" json:"default_ttl"`
+	TeamsWebhookURL  string        `yaml:"teams_webhook_url" json:"teams_webhook_url,omitempty"`
+	LogLevel         string        `yaml:"log_level" json:"log_level"`
+	DataDir          string        `yaml:"data_dir" json:"data_dir"`
+	ConfigVersion    string        `yaml:"config_version" json:"config_version"`
+	LastUpdated      time.Time     `yaml:"last_updated" json:"last_updated"`
 }
 
 func NewCLIConfig() *CLIConfig {

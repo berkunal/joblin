@@ -10,7 +10,7 @@ import (
 
 // CLIErrorHandler provides consistent error handling for CLI commands
 type CLIErrorHandler struct {
-	logger    *Logger
+	logger     *Logger
 	jsonOutput bool
 }
 

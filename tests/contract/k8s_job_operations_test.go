@@ -22,12 +22,12 @@ import (
 // This test MUST FAIL until the Kubernetes monitoring is implemented
 func TestKubernetesJobStatusMonitoring(t *testing.T) {
 	tests := []struct {
-		name            string
-		jobID           string
-		kubernetesJob   *batchv1.Job
-		kubernetesPods  []*corev1.Pod
-		expectedStatus  string
-		expectedError   string
+		name           string
+		jobID          string
+		kubernetesJob  *batchv1.Job
+		kubernetesPods []*corev1.Pod
+		expectedStatus string
+		expectedError  string
 	}{
 		{
 			name:  "job_pending",
@@ -41,9 +41,9 @@ func TestKubernetesJobStatusMonitoring(t *testing.T) {
 					},
 				},
 				Status: batchv1.JobStatus{
-					Active: 0,
+					Active:    0,
 					Succeeded: 0,
-					Failed: 0,
+					Failed:    0,
 				},
 			},
 			expectedStatus: "pending",
@@ -60,9 +60,9 @@ func TestKubernetesJobStatusMonitoring(t *testing.T) {
 					},
 				},
 				Status: batchv1.JobStatus{
-					Active: 1,
+					Active:    1,
 					Succeeded: 0,
-					Failed: 0,
+					Failed:    0,
 				},
 			},
 			kubernetesPods: []*corev1.Pod{
@@ -93,9 +93,9 @@ func TestKubernetesJobStatusMonitoring(t *testing.T) {
 					},
 				},
 				Status: batchv1.JobStatus{
-					Active: 0,
+					Active:    0,
 					Succeeded: 1,
-					Failed: 0,
+					Failed:    0,
 					Conditions: []batchv1.JobCondition{
 						{
 							Type:   batchv1.JobComplete,
@@ -141,9 +141,9 @@ func TestKubernetesJobStatusMonitoring(t *testing.T) {
 					},
 				},
 				Status: batchv1.JobStatus{
-					Active: 0,
+					Active:    0,
 					Succeeded: 0,
-					Failed: 1,
+					Failed:    1,
 					Conditions: []batchv1.JobCondition{
 						{
 							Type:   batchv1.JobFailed,
@@ -601,10 +601,10 @@ type LogEntry struct {
 
 // LogOptions represents options for log retrieval
 type LogOptions struct {
-	TailLines   int
-	SinceTime   time.Time
-	Follow      bool
-	Timestamps  bool
+	TailLines  int
+	SinceTime  time.Time
+	Follow     bool
+	Timestamps bool
 }
 
 // Extended K8sService interface for operations

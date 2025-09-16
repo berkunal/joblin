@@ -12,12 +12,12 @@ import (
 )
 
 var listFlags struct {
-	Status    string
-	Labels    []string
-	Limit     int
-	SortBy    string
-	Reverse   bool
-	Wide      bool
+	Status  string
+	Labels  []string
+	Limit   int
+	SortBy  string
+	Reverse bool
+	Wide    bool
 }
 
 var listCmd = &cobra.Command{

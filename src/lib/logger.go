@@ -68,7 +68,7 @@ func NewConsoleLogger(component string) *Logger {
 	logger := NewLogger(component)
 
 	// Use text formatter for console
-	logger.SetFormatter(&logrus.TextFormatter{
+	logger.Logger.SetFormatter(&logrus.TextFormatter{
 		DisableTimestamp: false,
 		FullTimestamp:    true,
 		TimestampFormat:  "2006-01-02 15:04:05",
