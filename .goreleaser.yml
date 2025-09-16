@@ -1,0 +1,298 @@
+# GoReleaser configuration for Joblin CLI
+# See: https://goreleaser.com/customization/
+
+version: 2
+
+# Project metadata
+project_name: joblin
+
+# Build configuration
+builds:
+  - id: joblin
+    binary: joblin
+    main: ./cmd/joblin
+
+    # Build for multiple platforms
+    goos:
+      - linux
+      - darwin
+      - windows
+
+    goarch:
+      - amd64
+      - arm64
+      - arm
+
+    goarm:
+      - "7"
+
+    # Ignore combinations
+    ignore:
+      - goos: windows
+        goarch: arm
+      - goos: windows
+        goarch: arm64
+
+    # Build flags
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+    # Build environment
+    env:
+      - CGO_ENABLED=0
+      - GO111MODULE=on
+
+    # Build mode
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+# Archive configuration
+archives:
+  - id: joblin-archive
+    builds:
+      - joblin
+
+    # Archive format by platform
+    format_overrides:
+      - goos: windows
+        format: zip
+
+    # Archive name template
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+
+    # Files to include in archive
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+      - docs/*
+      - examples/*
+
+# Checksum
+checksum:
+  name_template: "{{ .ProjectName }}_checksums.txt"
+  algorithm: sha256
+
+# SBOM (Software Bill of Materials)
+sboms:
+  - id: archive
+    artifacts: archive
+  - id: source
+    artifacts: source
+
+# Docker images
+dockers:
+  - id: joblin-docker
+    builds:
+      - joblin
+
+    image_templates:
+      - "ghcr.io/berkunal/joblin:{{ .Version }}-amd64"
+      - "ghcr.io/berkunal/joblin:latest-amd64"
+
+    dockerfile: Dockerfile
+
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.description=CLI tool for deploying Python scripts to Kubernetes"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--label=org.opencontainers.image.source={{ .GitURL }}"
+
+    extra_files:
+      - README.md
+      - LICENSE
+
+  - id: joblin-docker-arm64
+    builds:
+      - joblin
+
+    image_templates:
+      - "ghcr.io/berkunal/joblin:{{ .Version }}-arm64"
+      - "ghcr.io/berkunal/joblin:latest-arm64"
+
+    dockerfile: Dockerfile
+
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.description=CLI tool for deploying Python scripts to Kubernetes"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--label=org.opencontainers.image.source={{ .GitURL }}"
+
+    goarch: arm64
+
+# Docker manifest
+docker_manifests:
+  - name_template: "ghcr.io/berkunal/joblin:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/berkunal/joblin:{{ .Version }}-amd64"
+      - "ghcr.io/berkunal/joblin:{{ .Version }}-arm64"
+
+  - name_template: "ghcr.io/berkunal/joblin:latest"
+    image_templates:
+      - "ghcr.io/berkunal/joblin:latest-amd64"
+      - "ghcr.io/berkunal/joblin:latest-arm64"
+
+# GitHub release
+release:
+  github:
+    owner: berkunal
+    name: joblin
+
+  # Release notes
+  header: |
+    ## Joblin {{ .Version }}
+
+    Welcome to this new release of Joblin! 🚀
+
+    ### What's New
+
+  footer: |
+    ## Installation
+
+    ### Binary Installation
+    ```bash
+    # Linux/macOS
+    curl -LO https://github.com/berkunal/joblin/releases/download/{{ .Tag }}/joblin_{{ .Os }}_{{ .Arch }}.tar.gz
+    tar xzf joblin_{{ .Os }}_{{ .Arch }}.tar.gz
+    sudo mv joblin /usr/local/bin/
+
+    # Windows
+    # Download joblin_Windows_x86_64.zip from releases page
+    ```
+
+    ### Docker
+    ```bash
+    docker run --rm -it ghcr.io/berkunal/joblin:{{ .Version }} --help
+    ```
+
+    ### Homebrew (macOS)
+    ```bash
+    brew install berkunal/tap/joblin
+    ```
+
+    **Full Changelog**: https://github.com/berkunal/joblin/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+  # Pre-release detection
+  prerelease: auto
+
+  # Draft release
+  draft: false
+
+  # Replace existing release
+  replace: false
+
+  # Release name template
+  name_template: "Joblin {{.Version}}"
+
+# Homebrew tap
+brews:
+  - name: joblin
+
+    # Repository
+    repository:
+      owner: berkunal
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TOKEN }}"
+
+    # Formula location
+    directory: Formula
+
+    # Metadata
+    homepage: "https://github.com/berkunal/joblin"
+    description: "CLI tool for deploying Python scripts to Kubernetes clusters with job lifecycle management and Teams notifications"
+    license: "MIT"
+
+    # Dependencies
+    dependencies:
+      - name: kubernetes-cli
+        type: optional
+
+    # Installation test
+    test: |
+      system "#{bin}/joblin --version"
+
+    # Install instructions
+    install: |
+      bin.install "joblin"
+
+      # Generate shell completions
+      output = Utils.safe_popen_read("#{bin}/joblin", "completion", "bash")
+      (bash_completion/"joblin").write output
+
+      output = Utils.safe_popen_read("#{bin}/joblin", "completion", "zsh")
+      (zsh_completion/"_joblin").write output
+
+      output = Utils.safe_popen_read("#{bin}/joblin", "completion", "fish")
+      (fish_completion/"joblin.fish").write output
+
+# Chocolatey (Windows package manager)
+chocolateys:
+  - name: joblin
+
+    # Package info
+    title: Joblin CLI
+    authors: berkunal
+    project_url: https://github.com/berkunal/joblin
+    url_template: "https://github.com/berkunal/joblin/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    copyright: 2025 berkunal
+    license_url: https://github.com/berkunal/joblin/blob/main/LICENSE
+    require_license_acceptance: false
+    project_source_url: https://github.com/berkunal/joblin
+    docs_url: https://github.com/berkunal/joblin/blob/main/README.md
+    bug_tracker_url: https://github.com/berkunal/joblin/issues
+    tags: "kubernetes cli python devops"
+    summary: "CLI tool for deploying Python scripts to Kubernetes"
+    description: |
+      Joblin is a CLI tool that enables developers to deploy Python scripts to Kubernetes clusters easily.
+      Features include job lifecycle management, real-time monitoring, log streaming, and Teams webhook notifications.
+    release_notes: "https://github.com/berkunal/joblin/releases/tag/v{{ .Version }}"
+    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
+    source_repo: "https://push.chocolatey.org/"
+
+# Snapcraft (Linux package)
+snapcrafts:
+  - name: joblin
+
+    # Metadata
+    title: Joblin CLI
+    summary: CLI tool for deploying Python scripts to Kubernetes
+    description: |
+      Joblin is a powerful CLI tool that simplifies deploying and managing Python scripts
+      on Kubernetes clusters. It provides job lifecycle management, real-time monitoring,
+      log streaming, and Teams webhook notifications.
+
+    # Publishing
+    publish: true
+
+    # Grade and confinement
+    grade: stable
+    confinement: strict
+
+    # License
+    license: MIT
+
+    # Apps
+    apps:
+      joblin:
+        command: joblin
+        plugs: ["network", "home"]
+
+# Announcement
+announce:
+  # Skip announcement
+  skip: "{{ gt .Patch 0 }}"

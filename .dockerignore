@@ -1,0 +1,52 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+build/
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test artifacts
+*.test
+coverage.out
+coverage.html
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Dependencies (will be downloaded during build)
+vendor/
+
+# Documentation that's not needed in container
+docs/
+examples/
+*.md
+!README.md
+
+# CI/CD
+.github/
+.goreleaser.yml
+
+# Development
+Makefile
+.editorconfig
+.golangci.yml
+
+# Temporary files
+tmp/
+temp/
