@@ -5,15 +5,11 @@ run:
   timeout: 5m
   issues-exit-code: 1
   tests: true
-  skip-dirs:
-    - vendor
-    - .git
-  skip-files:
-    - ".*_test.go"
   modules-download-mode: readonly
 
 output:
-  format: colored-line-number
+  formats:
+    - format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
   uniq-by-line: true
@@ -61,7 +57,6 @@ linters-settings:
 
   # Struct tag validation
   govet:
-    check-shadowing: true
     enable-all: true
 
   # Error handling
@@ -74,8 +69,7 @@ linters-settings:
       - fmt.Println
 
   # Unused code
-  unused:
-    check-exported: false
+  unused: {}
 
   # Misspelling
   misspell:
@@ -115,6 +109,7 @@ linters:
     - revive
     - misspell
     - godot
+    - shadow
 
     # Complexity linters
     - gocyclo
@@ -143,6 +138,11 @@ linters:
     - whitespace
 
 issues:
+  exclude-dirs:
+    - vendor
+    - .git
+  exclude-files:
+    - ".*_test.go"
   exclude-rules:
     # Exclude some linters from running on tests files
     - path: _test\.go
