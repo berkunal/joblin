@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// Job represents a Python script execution job in the Kubernetes cluster
 type Job struct {
 	ID                string            `json:"id" bson:"_id"`
 	Name              string            `json:"name"`
@@ -29,6 +30,7 @@ type Job struct {
 	EnvironmentVars   map[string]string `json:"environment_vars,omitempty"`
 }
 
+// NewJob creates a new Job with the provided parameters
 func NewJob(name, scriptPath string, scriptContent []byte, dependencies []string) (*Job, error) {
 	if err := validateJobName(name); err != nil {
 		return nil, fmt.Errorf("invalid job name: %w", err)
@@ -63,6 +65,7 @@ func NewJob(name, scriptPath string, scriptContent []byte, dependencies []string
 	return job, nil
 }
 
+// Validate checks if the Job has valid field values
 func (j *Job) Validate() error {
 	if j.ID == "" {
 		return fmt.Errorf("job ID cannot be empty")
@@ -99,12 +102,14 @@ func (j *Job) Validate() error {
 	return nil
 }
 
+// SetStarted marks the job as started and sets the start time
 func (j *Job) SetStarted() {
 	now := time.Now().UTC()
 	j.StartedAt = &now
 	j.Status = StatusRunning
 }
 
+// SetCompleted marks the job as completed with the given exit code
 func (j *Job) SetCompleted(exitCode int) {
 	now := time.Now().UTC()
 	j.CompletedAt = &now
@@ -117,12 +122,14 @@ func (j *Job) SetCompleted(exitCode int) {
 	}
 }
 
+// SetTerminated marks the job as terminated
 func (j *Job) SetTerminated() {
 	now := time.Now().UTC()
 	j.CompletedAt = &now
 	j.Status = StatusTerminated
 }
 
+// SetFailed marks the job as failed with the given exit code
 func (j *Job) SetFailed(exitCode int) {
 	now := time.Now().UTC()
 	j.CompletedAt = &now
@@ -130,10 +137,12 @@ func (j *Job) SetFailed(exitCode int) {
 	j.Status = StatusFailed
 }
 
+// IsFinished returns true if the job has completed, failed, or been terminated
 func (j *Job) IsFinished() bool {
 	return j.Status == StatusCompleted || j.Status == StatusFailed || j.Status == StatusTerminated
 }
 
+// Duration returns the time elapsed since the job started, or total duration if finished
 func (j *Job) Duration() time.Duration {
 	if j.StartedAt == nil {
 		return 0
@@ -146,6 +155,7 @@ func (j *Job) Duration() time.Duration {
 	return time.Since(*j.StartedAt)
 }
 
+// IsExpired returns true if the job has exceeded its TTL and should be cleaned up
 func (j *Job) IsExpired() bool {
 	return time.Since(j.CreatedAt) > j.TTL
 }

@@ -9,6 +9,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Configuration key constants
+const (
+	ConfigKeyDefaultCluster   = "default-cluster"
+	ConfigKeyDefaultNamespace = "default-namespace"
+	ConfigKeyDefaultCPU       = "default-cpu"
+	ConfigKeyDefaultMemory    = "default-memory"
+	ConfigKeyDefaultStorage   = "default-storage"
+	ConfigKeyDefaultTTL       = "default-ttl"
+	ConfigKeyWebhookURL       = "webhook-url"
+	ConfigKeyLogLevel         = "log-level"
+	ConfigKeyDataDir          = "data-dir"
+)
+
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage configuration settings",
@@ -90,7 +103,7 @@ func init() {
 	configCmd.AddCommand(configUnsetCmd)
 }
 
-func runConfigView(cmd *cobra.Command, args []string) error {
+func runConfigView(_ *cobra.Command, _ []string) error {
 	config := cliContext.Config
 
 	if globalFlags.JSONOutput {
@@ -128,7 +141,7 @@ func runConfigView(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runConfigGet(cmd *cobra.Command, args []string) error {
+func runConfigGet(_ *cobra.Command, args []string) error {
 	key := args[0]
 	config := cliContext.Config
 
@@ -143,7 +156,9 @@ func runConfigGet(cmd *cobra.Command, args []string) error {
 			"key":   key,
 			"value": value,
 		}
-		PrintJSON(result)
+		if err := PrintJSON(result); err != nil {
+			return fmt.Errorf("failed to print JSON output: %w", err)
+		}
 	} else {
 		fmt.Printf("%s\n", value)
 	}
@@ -151,7 +166,7 @@ func runConfigGet(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runConfigSet(cmd *cobra.Command, args []string) error {
+func runConfigSet(_ *cobra.Command, args []string) error {
 	key := args[0]
 	value := args[1]
 
@@ -176,7 +191,9 @@ func runConfigSet(cmd *cobra.Command, args []string) error {
 			"value":   value,
 			"message": fmt.Sprintf("Configuration updated: %s = %s", key, value),
 		}
-		PrintJSON(result)
+		if err := PrintJSON(result); err != nil {
+			return fmt.Errorf("failed to print JSON output: %w", err)
+		}
 	} else {
 		fmt.Printf("✅ Configuration updated: %s = %s\n", key, value)
 		fmt.Printf("Configuration saved to: %s\n", config.GetConfigPath())
@@ -185,7 +202,7 @@ func runConfigSet(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runConfigUnset(cmd *cobra.Command, args []string) error {
+func runConfigUnset(_ *cobra.Command, args []string) error {
 	key := args[0]
 	config := cliContext.Config
 
@@ -207,7 +224,9 @@ func runConfigUnset(cmd *cobra.Command, args []string) error {
 			"key":     key,
 			"message": fmt.Sprintf("Configuration unset: %s", key),
 		}
-		PrintJSON(result)
+		if err := PrintJSON(result); err != nil {
+			return fmt.Errorf("failed to print JSON output: %w", err)
+		}
 	} else {
 		fmt.Printf("✅ Configuration unset: %s\n", key)
 		fmt.Printf("Configuration saved to: %s\n", config.GetConfigPath())
@@ -218,23 +237,23 @@ func runConfigUnset(cmd *cobra.Command, args []string) error {
 
 func getConfigValue(config *models.CLIConfig, key string) (string, error) {
 	switch key {
-	case "default-cluster":
+	case ConfigKeyDefaultCluster:
 		return config.DefaultCluster, nil
-	case "default-namespace":
+	case ConfigKeyDefaultNamespace:
 		return config.DefaultNamespace, nil
-	case "default-cpu":
+	case ConfigKeyDefaultCPU:
 		return config.DefaultResources.CPU, nil
-	case "default-memory":
+	case ConfigKeyDefaultMemory:
 		return config.DefaultResources.Memory, nil
-	case "default-storage":
+	case ConfigKeyDefaultStorage:
 		return config.DefaultResources.EphemeralStorage, nil
-	case "default-ttl":
+	case ConfigKeyDefaultTTL:
 		return config.DefaultTTL.String(), nil
-	case "webhook-url":
+	case ConfigKeyWebhookURL:
 		return config.TeamsWebhookURL, nil
-	case "log-level":
+	case ConfigKeyLogLevel:
 		return config.LogLevel, nil
-	case "data-dir":
+	case ConfigKeyDataDir:
 		return config.DataDir, nil
 	default:
 		return "", fmt.Errorf("unknown configuration key: %s", key)
@@ -243,14 +262,14 @@ func getConfigValue(config *models.CLIConfig, key string) (string, error) {
 
 func setConfigValue(config *models.CLIConfig, key, value string) error {
 	switch key {
-	case "default-cluster":
+	case ConfigKeyDefaultCluster:
 		config.DefaultCluster = value
-	case "default-namespace":
+	case ConfigKeyDefaultNamespace:
 		if value == "" {
 			return fmt.Errorf("default namespace cannot be empty")
 		}
 		config.DefaultNamespace = value
-	case "default-cpu":
+	case ConfigKeyDefaultCPU:
 		if value == "" {
 			return fmt.Errorf("default CPU cannot be empty")
 		}
@@ -264,7 +283,7 @@ func setConfigValue(config *models.CLIConfig, key, value string) error {
 			return fmt.Errorf("invalid CPU value: %w", err)
 		}
 		config.DefaultResources.CPU = value
-	case "default-memory":
+	case ConfigKeyDefaultMemory:
 		if value == "" {
 			return fmt.Errorf("default memory cannot be empty")
 		}
@@ -278,7 +297,7 @@ func setConfigValue(config *models.CLIConfig, key, value string) error {
 			return fmt.Errorf("invalid memory value: %w", err)
 		}
 		config.DefaultResources.Memory = value
-	case "default-storage":
+	case ConfigKeyDefaultStorage:
 		if value == "" {
 			return fmt.Errorf("default storage cannot be empty")
 		}
@@ -292,7 +311,7 @@ func setConfigValue(config *models.CLIConfig, key, value string) error {
 			return fmt.Errorf("invalid storage value: %w", err)
 		}
 		config.DefaultResources.EphemeralStorage = value
-	case "default-ttl":
+	case ConfigKeyDefaultTTL:
 		if value == "" {
 			return fmt.Errorf("default TTL cannot be empty")
 		}
@@ -301,7 +320,7 @@ func setConfigValue(config *models.CLIConfig, key, value string) error {
 			return fmt.Errorf("invalid TTL value: %w", err)
 		}
 		config.DefaultTTL = ttl
-	case "webhook-url":
+	case ConfigKeyWebhookURL:
 		if value != "" {
 			if err := config.UpdateWebhookURL(value); err != nil {
 				return err
@@ -309,11 +328,11 @@ func setConfigValue(config *models.CLIConfig, key, value string) error {
 		} else {
 			config.TeamsWebhookURL = ""
 		}
-	case "log-level":
+	case ConfigKeyLogLevel:
 		if err := config.UpdateLogLevel(value); err != nil {
 			return err
 		}
-	case "data-dir":
+	case ConfigKeyDataDir:
 		if value == "" {
 			return fmt.Errorf("data directory cannot be empty")
 		}

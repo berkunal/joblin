@@ -5,14 +5,21 @@ import (
 	"fmt"
 )
 
+// JobStatus represents the current state of a job execution
 type JobStatus string
 
 const (
+	// StatusPending indicates a job that has been created but not yet started
 	StatusPending    JobStatus = "Pending"
+	// StatusRunning indicates a job that is currently executing
 	StatusRunning    JobStatus = "Running"
+	// StatusCompleted indicates a job that has finished successfully
 	StatusCompleted  JobStatus = "Completed"
+	// StatusFailed indicates a job that has failed to complete successfully
 	StatusFailed     JobStatus = "Failed"
+	// StatusTerminated indicates a job that was manually terminated
 	StatusTerminated JobStatus = "Terminated"
+	// StatusUnknown indicates a job with an unknown status
 	StatusUnknown    JobStatus = "Unknown"
 )
 
@@ -29,18 +36,22 @@ func (s JobStatus) String() string {
 	return string(s)
 }
 
+// IsValid checks if the JobStatus is one of the valid values
 func (s JobStatus) IsValid() bool {
 	return validStatuses[s]
 }
 
+// IsTerminal returns true if this status indicates the job has finished
 func (s JobStatus) IsTerminal() bool {
 	return s == StatusCompleted || s == StatusFailed || s == StatusTerminated
 }
 
+// IsActive returns true if this status indicates the job is still running
 func (s JobStatus) IsActive() bool {
 	return s == StatusPending || s == StatusRunning
 }
 
+// CanTransitionTo checks if a status transition is valid
 func (s JobStatus) CanTransitionTo(target JobStatus) bool {
 	switch s {
 	case StatusPending:
@@ -56,6 +67,7 @@ func (s JobStatus) CanTransitionTo(target JobStatus) bool {
 	}
 }
 
+// Description returns a human-readable description of the status
 func (s JobStatus) Description() string {
 	switch s {
 	case StatusPending:
@@ -75,6 +87,7 @@ func (s JobStatus) Description() string {
 	}
 }
 
+// UnmarshalJSON implements JSON unmarshaling for JobStatus
 func (s *JobStatus) UnmarshalJSON(data []byte) error {
 	var str string
 	if err := json.Unmarshal(data, &str); err != nil {
@@ -90,6 +103,7 @@ func (s *JobStatus) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// MarshalJSON implements JSON marshaling for JobStatus
 func (s JobStatus) MarshalJSON() ([]byte, error) {
 	if !s.IsValid() {
 		return nil, fmt.Errorf("invalid job status: %s", s)
@@ -97,6 +111,7 @@ func (s JobStatus) MarshalJSON() ([]byte, error) {
 	return json.Marshal(string(s))
 }
 
+// ParseJobStatus parses a string into a JobStatus, returning an error if invalid
 func ParseJobStatus(s string) (JobStatus, error) {
 	status := JobStatus(s)
 	if !status.IsValid() {
@@ -105,6 +120,7 @@ func ParseJobStatus(s string) (JobStatus, error) {
 	return status, nil
 }
 
+// AllJobStatuses returns all valid JobStatus values
 func AllJobStatuses() []JobStatus {
 	return []JobStatus{
 		StatusPending,
@@ -116,6 +132,7 @@ func AllJobStatuses() []JobStatus {
 	}
 }
 
+// ActiveStatuses returns all job statuses that indicate an active (non-terminal) job
 func ActiveStatuses() []JobStatus {
 	return []JobStatus{
 		StatusPending,
@@ -123,6 +140,7 @@ func ActiveStatuses() []JobStatus {
 	}
 }
 
+// TerminalStatuses returns all job statuses that indicate a finished job
 func TerminalStatuses() []JobStatus {
 	return []JobStatus{
 		StatusCompleted,

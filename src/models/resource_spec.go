@@ -6,12 +6,14 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+// ResourceSpec defines resource limits for a job (CPU, memory, storage)
 type ResourceSpec struct {
 	CPU              string `json:"cpu"`
 	Memory           string `json:"memory"`
 	EphemeralStorage string `json:"ephemeral_storage"`
 }
 
+// NewResourceSpec creates a new ResourceSpec with default values
 func NewResourceSpec() ResourceSpec {
 	return ResourceSpec{
 		CPU:              "100m",
@@ -20,6 +22,7 @@ func NewResourceSpec() ResourceSpec {
 	}
 }
 
+// Validate checks if the ResourceSpec has valid field values
 func (r *ResourceSpec) Validate() error {
 	if err := r.validateCPU(); err != nil {
 		return fmt.Errorf("invalid CPU specification: %w", err)
@@ -43,7 +46,7 @@ func (r *ResourceSpec) validateCPU() error {
 
 	quantity, err := resource.ParseQuantity(r.CPU)
 	if err != nil {
-		return fmt.Errorf("Invalid CPU format: %w", err)
+		return fmt.Errorf("invalid CPU format: %w", err)
 	}
 
 	// Convert to millicores for comparison
@@ -72,7 +75,7 @@ func (r *ResourceSpec) validateMemory() error {
 
 	quantity, err := resource.ParseQuantity(r.Memory)
 	if err != nil {
-		return fmt.Errorf("Invalid memory format: %w", err)
+		return fmt.Errorf("invalid memory format: %w", err)
 	}
 
 	// Convert to bytes for comparison
@@ -80,7 +83,7 @@ func (r *ResourceSpec) validateMemory() error {
 
 	// Check for zero/negative memory
 	if bytes <= 0 {
-		return fmt.Errorf("Memory must be positive")
+		return fmt.Errorf("memory must be positive")
 	}
 
 	// Minimum: 64Mi
@@ -126,6 +129,7 @@ func (r *ResourceSpec) validateEphemeralStorage() error {
 	return nil
 }
 
+// ToKubernetesResourceRequirements converts the ResourceSpec to Kubernetes resource requirements
 func (r *ResourceSpec) ToKubernetesResourceRequirements() map[string]resource.Quantity {
 	requirements := make(map[string]resource.Quantity)
 
@@ -144,6 +148,7 @@ func (r *ResourceSpec) ToKubernetesResourceRequirements() map[string]resource.Qu
 	return requirements
 }
 
+// SetDefaults sets default values for all resource fields
 func (r *ResourceSpec) SetDefaults() {
 	if r.CPU == "" {
 		r.CPU = "100m"
@@ -156,6 +161,7 @@ func (r *ResourceSpec) SetDefaults() {
 	}
 }
 
+// Clone creates a deep copy of the ResourceSpec
 func (r *ResourceSpec) Clone() ResourceSpec {
 	return ResourceSpec{
 		CPU:              r.CPU,
@@ -168,11 +174,13 @@ func (r *ResourceSpec) String() string {
 	return fmt.Sprintf("CPU: %s, Memory: %s, Storage: %s", r.CPU, r.Memory, r.EphemeralStorage)
 }
 
+// ValidateKubernetesQuantity validates that a string is a valid Kubernetes resource quantity
 func ValidateKubernetesQuantity(quantity string) error {
 	_, err := resource.ParseQuantity(quantity)
 	return err
 }
 
+// CompareQuantities compares two Kubernetes resource quantities
 func CompareQuantities(a, b string) (int, error) {
 	qA, err := resource.ParseQuantity(a)
 	if err != nil {

@@ -1,3 +1,5 @@
+// Package storage provides persistent data storage functionality using BBolt database.
+// It handles jobs, logs, notifications, and metadata storage with efficient querying and cleanup.
 package storage
 
 import (
@@ -10,17 +12,24 @@ import (
 )
 
 const (
+	// JobsBucket is the name of the BBolt bucket for storing job data
 	JobsBucket          = "jobs"
+	// LogsBucket is the name of the BBolt bucket for storing job logs
 	LogsBucket          = "logs"
+	// NotificationsBucket is the name of the BBolt bucket for storing notification data
 	NotificationsBucket = "notifications"
+	// MetadataBucket is the name of the BBolt bucket for storing metadata
 	MetadataBucket      = "metadata"
 )
 
-type StorageService struct {
+// Service provides persistent storage operations using BBolt database
+// Service provides persistent storage operations using BBolt database
+type Service struct {
 	db *bbolt.DB
 }
 
-func NewStorageService(dbPath string) (*StorageService, error) {
+// NewService creates a new storage service with the specified database path
+func NewService(dbPath string) (*Service, error) {
 	db, err := bbolt.Open(dbPath, 0644, &bbolt.Options{
 		Timeout: 5 * time.Second,
 	})
@@ -28,17 +37,19 @@ func NewStorageService(dbPath string) (*StorageService, error) {
 		return nil, fmt.Errorf("failed to open database at %s: %w", dbPath, err)
 	}
 
-	service := &StorageService{db: db}
+	service := &Service{db: db}
 
 	if err := service.initializeBuckets(); err != nil {
-		db.Close()
+		if closeErr := db.Close(); closeErr != nil {
+			return nil, fmt.Errorf("failed to initialize database buckets and close db: %w, %w", err, closeErr)
+		}
 		return nil, fmt.Errorf("failed to initialize database buckets: %w", err)
 	}
 
 	return service, nil
 }
 
-func (s *StorageService) initializeBuckets() error {
+func (s *Service) initializeBuckets() error {
 	return s.db.Update(func(tx *bbolt.Tx) error {
 		buckets := []string{JobsBucket, LogsBucket, NotificationsBucket, MetadataBucket}
 
@@ -52,14 +63,16 @@ func (s *StorageService) initializeBuckets() error {
 	})
 }
 
-func (s *StorageService) Close() error {
+// Close closes the underlying database connection
+func (s *Service) Close() error {
 	if s.db != nil {
 		return s.db.Close()
 	}
 	return nil
 }
 
-func (s *StorageService) SaveJob(job *models.Job) error {
+// SaveJob stores a job in the database
+func (s *Service) SaveJob(job *models.Job) error {
 	if err := job.Validate(); err != nil {
 		return fmt.Errorf("invalid job: %w", err)
 	}
@@ -83,7 +96,8 @@ func (s *StorageService) SaveJob(job *models.Job) error {
 	})
 }
 
-func (s *StorageService) GetJob(jobID string) (*models.Job, error) {
+// GetJob retrieves a job by ID from the database
+func (s *Service) GetJob(jobID string) (*models.Job, error) {
 	if jobID == "" {
 		return nil, fmt.Errorf("job ID cannot be empty")
 	}
@@ -111,7 +125,8 @@ func (s *StorageService) GetJob(jobID string) (*models.Job, error) {
 	return &job, nil
 }
 
-func (s *StorageService) UpdateJob(job *models.Job) error {
+// UpdateJob updates an existing job in the database
+func (s *Service) UpdateJob(job *models.Job) error {
 	if err := job.Validate(); err != nil {
 		return fmt.Errorf("invalid job: %w", err)
 	}
@@ -126,7 +141,8 @@ func (s *StorageService) UpdateJob(job *models.Job) error {
 	return s.SaveJob(job)
 }
 
-func (s *StorageService) DeleteJob(jobID string) error {
+// DeleteJob removes a job and all its associated data from storage
+func (s *Service) DeleteJob(jobID string) error {
 	if jobID == "" {
 		return fmt.Errorf("job ID cannot be empty")
 	}
@@ -145,7 +161,8 @@ func (s *StorageService) DeleteJob(jobID string) error {
 	})
 }
 
-func (s *StorageService) ListJobs() ([]*models.Job, error) {
+// ListJobs retrieves all jobs from the database
+func (s *Service) ListJobs() ([]*models.Job, error) {
 	var jobs []*models.Job
 
 	err := s.db.View(func(tx *bbolt.Tx) error {
@@ -171,7 +188,8 @@ func (s *StorageService) ListJobs() ([]*models.Job, error) {
 	return jobs, nil
 }
 
-func (s *StorageService) ListJobsByStatus(status models.JobStatus) ([]*models.Job, error) {
+// ListJobsByStatus retrieves all jobs with the specified status
+func (s *Service) ListJobsByStatus(status models.JobStatus) ([]*models.Job, error) {
 	allJobs, err := s.ListJobs()
 	if err != nil {
 		return nil, err
@@ -187,7 +205,8 @@ func (s *StorageService) ListJobsByStatus(status models.JobStatus) ([]*models.Jo
 	return filteredJobs, nil
 }
 
-func (s *StorageService) SaveJobLog(log *models.JobLog) error {
+// SaveJobLog stores a job log entry in the database
+func (s *Service) SaveJobLog(log *models.JobLog) error {
 	if err := log.Validate(); err != nil {
 		return fmt.Errorf("invalid job log: %w", err)
 	}
@@ -212,7 +231,8 @@ func (s *StorageService) SaveJobLog(log *models.JobLog) error {
 	})
 }
 
-func (s *StorageService) GetJobLogs(jobID string) (models.JobLogCollection, error) {
+// GetJobLogs retrieves all stored logs for a specific job
+func (s *Service) GetJobLogs(jobID string) (models.JobLogCollection, error) {
 	if jobID == "" {
 		return nil, fmt.Errorf("job ID cannot be empty")
 	}
@@ -228,7 +248,8 @@ func (s *StorageService) GetJobLogs(jobID string) (models.JobLogCollection, erro
 		prefix := []byte(jobID + ":")
 		cursor := bucket.Cursor()
 
-		for k, v := cursor.Seek(prefix); k != nil && len(k) >= len(prefix) && string(k[:len(prefix)]) == string(prefix); k, v = cursor.Next() {
+		for k, v := cursor.Seek(prefix); k != nil && len(k) >= len(prefix) &&
+			string(k[:len(prefix)]) == string(prefix); k, v = cursor.Next() {
 			var log models.JobLog
 			if err := json.Unmarshal(v, &log); err != nil {
 				return fmt.Errorf("failed to unmarshal job log %s: %w", string(k), err)
@@ -246,7 +267,8 @@ func (s *StorageService) GetJobLogs(jobID string) (models.JobLogCollection, erro
 	return logs, nil
 }
 
-func (s *StorageService) DeleteJobLogs(jobID string) error {
+// DeleteJobLogs removes all logs associated with a job
+func (s *Service) DeleteJobLogs(jobID string) error {
 	if jobID == "" {
 		return fmt.Errorf("job ID cannot be empty")
 	}
@@ -261,7 +283,8 @@ func (s *StorageService) DeleteJobLogs(jobID string) error {
 		cursor := bucket.Cursor()
 
 		var keysToDelete [][]byte
-		for k, _ := cursor.Seek(prefix); k != nil && len(k) >= len(prefix) && string(k[:len(prefix)]) == string(prefix); k, _ = cursor.Next() {
+		for k, _ := cursor.Seek(prefix); k != nil && len(k) >= len(prefix) &&
+			string(k[:len(prefix)]) == string(prefix); k, _ = cursor.Next() {
 			keysToDelete = append(keysToDelete, append([]byte(nil), k...))
 		}
 
@@ -275,7 +298,8 @@ func (s *StorageService) DeleteJobLogs(jobID string) error {
 	})
 }
 
-func (s *StorageService) SaveNotification(notification *models.Notification) error {
+// SaveNotification stores a notification in the database
+func (s *Service) SaveNotification(notification *models.Notification) error {
 	if err := notification.Validate(); err != nil {
 		return fmt.Errorf("invalid notification: %w", err)
 	}
@@ -300,7 +324,8 @@ func (s *StorageService) SaveNotification(notification *models.Notification) err
 	})
 }
 
-func (s *StorageService) GetNotifications(jobID string) ([]*models.Notification, error) {
+// GetNotifications retrieves all notifications for a specific job
+func (s *Service) GetNotifications(jobID string) ([]*models.Notification, error) {
 	if jobID == "" {
 		return nil, fmt.Errorf("job ID cannot be empty")
 	}
@@ -316,7 +341,8 @@ func (s *StorageService) GetNotifications(jobID string) ([]*models.Notification,
 		prefix := []byte(jobID + ":")
 		cursor := bucket.Cursor()
 
-		for k, v := cursor.Seek(prefix); k != nil && len(k) >= len(prefix) && string(k[:len(prefix)]) == string(prefix); k, v = cursor.Next() {
+		for k, v := cursor.Seek(prefix); k != nil && len(k) >= len(prefix) &&
+			string(k[:len(prefix)]) == string(prefix); k, v = cursor.Next() {
 			var notification models.Notification
 			if err := json.Unmarshal(v, &notification); err != nil {
 				return fmt.Errorf("failed to unmarshal notification %s: %w", string(k), err)
@@ -334,7 +360,8 @@ func (s *StorageService) GetNotifications(jobID string) ([]*models.Notification,
 	return notifications, nil
 }
 
-func (s *StorageService) CleanupExpiredJobs() (int, error) {
+// CleanupExpiredJobs removes jobs that have exceeded their TTL
+func (s *Service) CleanupExpiredJobs() (int, error) {
 	jobs, err := s.ListJobs()
 	if err != nil {
 		return 0, fmt.Errorf("failed to list jobs: %w", err)
@@ -360,7 +387,8 @@ func (s *StorageService) CleanupExpiredJobs() (int, error) {
 	return len(expiredJobIDs), nil
 }
 
-func (s *StorageService) CleanupOldNotifications() (int, error) {
+// CleanupOldNotifications removes old notification records
+func (s *Service) CleanupOldNotifications() (int, error) {
 	var oldNotifications []string
 
 	err := s.db.View(func(tx *bbolt.Tx) error {
@@ -409,7 +437,8 @@ func (s *StorageService) CleanupOldNotifications() (int, error) {
 	return len(oldNotifications), nil
 }
 
-func (s *StorageService) SetMetadata(key string, value string) error {
+// SetMetadata stores a key-value pair in the metadata bucket
+func (s *Service) SetMetadata(key string, value string) error {
 	return s.db.Update(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte(MetadataBucket))
 		if bucket == nil {
@@ -420,7 +449,8 @@ func (s *StorageService) SetMetadata(key string, value string) error {
 	})
 }
 
-func (s *StorageService) GetMetadata(key string) (string, error) {
+// GetMetadata retrieves a value from the metadata bucket
+func (s *Service) GetMetadata(key string) (string, error) {
 	var value string
 
 	err := s.db.View(func(tx *bbolt.Tx) error {
@@ -441,7 +471,8 @@ func (s *StorageService) GetMetadata(key string) (string, error) {
 	return value, err
 }
 
-func (s *StorageService) GetStats() (map[string]int, error) {
+// GetStats returns statistical information about stored data
+func (s *Service) GetStats() (map[string]int, error) {
 	stats := make(map[string]int)
 
 	err := s.db.View(func(tx *bbolt.Tx) error {

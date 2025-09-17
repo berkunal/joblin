@@ -1,3 +1,4 @@
+// Package lib provides common utilities and error handling for the Joblin CLI application.
 package lib
 
 import (
@@ -55,13 +56,14 @@ func (h *CLIErrorHandler) HandleJobError(ctx context.Context, err error, jobID, 
 }
 
 // HandleSuccess displays success messages consistently
-func (h *CLIErrorHandler) HandleSuccess(ctx context.Context, message string, data interface{}) {
+func (h *CLIErrorHandler) HandleSuccess(_ context.Context, message string, data interface{}) {
 	if h.jsonOutput {
 		h.handleJSONSuccess(message, data)
 	} else {
 		fmt.Println(message)
 		if data != nil {
-			// Could add verbose output here if needed
+			// Verbose output could be added here in future versions
+			h.logger.WithField("data", data).Debug("Success with additional data")
 		}
 	}
 }
@@ -86,7 +88,7 @@ func (h *CLIErrorHandler) WrapJobError(err error, job *models.Job, operation str
 		WithContext("operation", operation)
 
 	if job.Namespace != "" {
-		joblinErr.WithContext("namespace", job.Namespace)
+		joblinErr = joblinErr.WithContext("namespace", job.Namespace)
 	}
 
 	return joblinErr

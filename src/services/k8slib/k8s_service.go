@@ -1,3 +1,4 @@
+// Package k8slib provides Kubernetes integration services for job management and cluster operations.
 package k8slib
 
 import (
@@ -19,19 +20,27 @@ import (
 )
 
 const (
+	// DefaultPythonImage is the default Python Docker image used for jobs
 	DefaultPythonImage    = "python:3.11-slim"
+	// JoblinManagedLabel is the Kubernetes label indicating management by Joblin
 	JoblinManagedLabel    = "app.kubernetes.io/managed-by"
+	// JoblinNameLabel is the Kubernetes label for application name
 	JoblinNameLabel       = "app.kubernetes.io/name"
+	// JoblinInstanceLabel is the Kubernetes label for application instance
 	JoblinInstanceLabel   = "app.kubernetes.io/instance"
+	// JoblinManagedValue is the value for the managed-by label
 	JoblinManagedValue    = "joblin"
+	// PythonScriptContainer is the name of the container running Python scripts
 	PythonScriptContainer = "python-script"
 )
 
+// K8sService provides Kubernetes operations for job management
 type K8sService struct {
 	clientset *kubernetes.Clientset
 	config    *rest.Config
 }
 
+// NewK8sService creates a new Kubernetes service with external configuration
 func NewK8sService(kubeconfig string, context string) (*K8sService, error) {
 	config, err := buildConfig(kubeconfig, context)
 	if err != nil {
@@ -49,6 +58,7 @@ func NewK8sService(kubeconfig string, context string) (*K8sService, error) {
 	}, nil
 }
 
+// NewK8sServiceFromCluster creates a new Kubernetes service using in-cluster configuration
 func NewK8sServiceFromCluster() (*K8sService, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -86,6 +96,7 @@ func buildConfig(kubeconfig string, context string) (*rest.Config, error) {
 	return config, nil
 }
 
+// CreateJob creates a Kubernetes job from the job specification
 func (k *K8sService) CreateJob(ctx context.Context, job *models.Job) error {
 	if err := job.Validate(); err != nil {
 		return fmt.Errorf("invalid job: %w", err)
@@ -103,7 +114,8 @@ func (k *K8sService) CreateJob(ctx context.Context, job *models.Job) error {
 
 	_, err = k.clientset.BatchV1().Jobs(job.Namespace).Create(ctx, k8sJob, metav1.CreateOptions{})
 	if err != nil {
-		k.clientset.CoreV1().ConfigMaps(job.Namespace).Delete(ctx, configMap.Name, metav1.DeleteOptions{})
+		// Attempt to cleanup ConfigMap if job creation failed
+		_ = k.clientset.CoreV1().ConfigMaps(job.Namespace).Delete(ctx, configMap.Name, metav1.DeleteOptions{})
 		return fmt.Errorf("failed to create kubernetes job: %w", err)
 	}
 
@@ -148,11 +160,21 @@ func (k *K8sService) buildKubernetesJob(job *models.Job, configMapName string) (
 	resourceRequirements := k.buildResourceRequirements(job.ResourceLimits)
 
 	backoffLimit := int32(0)
-	ttlSecondsAfterFinished := int32(int(job.TTL.Seconds()))
+	// Safely convert to int32 with bounds checking
+	ttlSeconds := job.TTL.Seconds()
+	var ttlSecondsAfterFinished int32
+	if ttlSeconds > float64(int32(^uint32(0)>>1)) {
+		ttlSecondsAfterFinished = int32(^uint32(0) >> 1) // Max int32
+	} else if ttlSeconds < 0 {
+		ttlSecondsAfterFinished = 0
+	} else {
+		ttlSecondsAfterFinished = int32(ttlSeconds)
+	}
 
 	scriptCommand := []string{
 		"sh", "-c",
-		"if [ -f /app/requirements.txt ] && [ -s /app/requirements.txt ]; then pip install -r /app/requirements.txt; fi && python /app/script.py",
+		"if [ -f /app/requirements.txt ] && [ -s /app/requirements.txt ]; then " +
+			"pip install -r /app/requirements.txt; fi && python /app/script.py",
 	}
 
 	k8sJob := &batchv1.Job{
@@ -261,6 +283,7 @@ func buildEnvironmentVariables(envVars map[string]string) []corev1.EnvVar {
 	return envList
 }
 
+// GetJobStatus retrieves the current status of a Kubernetes job
 func (k *K8sService) GetJobStatus(ctx context.Context, job *models.Job) (models.JobStatus, error) {
 	k8sJob, err := k.clientset.BatchV1().Jobs(job.Namespace).Get(ctx, job.KubernetesJobName, metav1.GetOptions{})
 	if err != nil {
@@ -293,6 +316,7 @@ func (k *K8sService) mapJobStatus(k8sJob *batchv1.Job) models.JobStatus {
 	return models.StatusPending
 }
 
+// DeleteJob removes a Kubernetes job and its associated resources
 func (k *K8sService) DeleteJob(ctx context.Context, job *models.Job) error {
 	deletePolicy := metav1.DeletePropagationForeground
 
@@ -313,6 +337,7 @@ func (k *K8sService) DeleteJob(ctx context.Context, job *models.Job) error {
 	return nil
 }
 
+// GetJobLogs retrieves logs from a Kubernetes job
 func (k *K8sService) GetJobLogs(ctx context.Context, job *models.Job, follow bool) (io.ReadCloser, error) {
 	pods, err := k.getJobPods(ctx, job)
 	if err != nil {
@@ -348,6 +373,7 @@ func (k *K8sService) getJobPods(ctx context.Context, job *models.Job) ([]corev1.
 	return podList.Items, nil
 }
 
+// WatchJobStatus monitors job status changes and sends updates to the provided channel
 func (k *K8sService) WatchJobStatus(ctx context.Context, job *models.Job, statusChan chan<- models.JobStatus) error {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
@@ -375,6 +401,7 @@ func (k *K8sService) WatchJobStatus(ctx context.Context, job *models.Job, status
 	}
 }
 
+// GetJobExitCode retrieves the exit code of a completed job
 func (k *K8sService) GetJobExitCode(ctx context.Context, job *models.Job) (*int, error) {
 	pods, err := k.getJobPods(ctx, job)
 	if err != nil {
@@ -399,6 +426,7 @@ func (k *K8sService) GetJobExitCode(ctx context.Context, job *models.Job) (*int,
 	return nil, nil // Job not yet terminated
 }
 
+// ListJobs retrieves all jobs in the specified namespace
 func (k *K8sService) ListJobs(ctx context.Context, namespace string) ([]*batchv1.Job, error) {
 	labelSelector := fmt.Sprintf("%s=%s", JoblinManagedLabel, JoblinManagedValue)
 
@@ -417,6 +445,7 @@ func (k *K8sService) ListJobs(ctx context.Context, namespace string) ([]*batchv1
 	return jobs, nil
 }
 
+// CleanupCompletedJobs removes completed jobs older than the specified duration
 func (k *K8sService) CleanupCompletedJobs(ctx context.Context, namespace string, olderThan time.Duration) (int, error) {
 	jobs, err := k.ListJobs(ctx, namespace)
 	if err != nil {
@@ -437,7 +466,7 @@ func (k *K8sService) CleanupCompletedJobs(ctx context.Context, namespace string,
 			}
 
 			configMapName := fmt.Sprintf("%s-script", k8sJob.Name)
-			k.clientset.CoreV1().ConfigMaps(namespace).Delete(ctx, configMapName, metav1.DeleteOptions{})
+			_ = k.clientset.CoreV1().ConfigMaps(namespace).Delete(ctx, configMapName, metav1.DeleteOptions{})
 
 			deletedCount++
 		}
@@ -446,11 +475,13 @@ func (k *K8sService) CleanupCompletedJobs(ctx context.Context, namespace string,
 	return deletedCount, nil
 }
 
-func (k *K8sService) TestConnection(ctx context.Context) error {
+// TestConnection verifies connectivity to the Kubernetes cluster
+func (k *K8sService) TestConnection(_ context.Context) error {
 	_, err := k.clientset.Discovery().ServerVersion()
 	return err
 }
 
+// GetNamespaces retrieves all available namespaces in the cluster
 func (k *K8sService) GetNamespaces(ctx context.Context) ([]string, error) {
 	namespaces, err := k.clientset.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {

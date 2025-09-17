@@ -62,16 +62,16 @@ func init() {
 	deployCmd.Flags().BoolVar(&deployFlags.DryRun, "dry-run", false, "validate job without creating it")
 }
 
-func runDeploy(cmd *cobra.Command, args []string) error {
+func runDeploy(_ *cobra.Command, args []string) error {
 	scriptPath := args[0]
 
 	// Validate script file exists
 	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
-		return fmt.Errorf("Script file not found or unreadable")
+		return fmt.Errorf("script file not found or unreadable")
 	}
 
 	// Read script content
-	scriptContent, err := os.ReadFile(scriptPath)
+	scriptContent, err := os.ReadFile(filepath.Clean(scriptPath)) // #nosec G304
 	if err != nil {
 		return fmt.Errorf("failed to read script file: %w", err)
 	}
@@ -177,7 +177,9 @@ func runDeploy(cmd *cobra.Command, args []string) error {
 
 	// Output result
 	if globalFlags.JSONOutput {
-		PrintJSON(job)
+		if err := PrintJSON(job); err != nil {
+			return fmt.Errorf("failed to output JSON: %w", err)
+		}
 	} else {
 		fmt.Printf("Job deployed successfully!\n")
 		fmt.Printf("Job ID: %s\n", job.ID)
@@ -228,7 +230,7 @@ func parseDependencies(scriptPath, requirementsFlag string) ([]string, error) {
 	requirementsPath := filepath.Join(scriptDir, "requirements.txt")
 
 	if _, err := os.Stat(requirementsPath); err == nil {
-		content, err := os.ReadFile(requirementsPath)
+		content, err := os.ReadFile(filepath.Clean(requirementsPath)) // #nosec G304
 		if err != nil {
 			return nil, fmt.Errorf("failed to read requirements.txt: %w", err)
 		}
@@ -404,7 +406,7 @@ func runDryRun(request *joblib.JobCreateRequest) error {
 	// Test Kubernetes connection
 	ctx := GetContext()
 	if err := cliContext.K8sService.TestConnection(ctx); err != nil {
-		return fmt.Errorf("Kubernetes connection test failed: %w", err)
+		return fmt.Errorf("kubernetes connection test failed: %w", err)
 	}
 
 	// Test webhook URL if provided
@@ -421,7 +423,9 @@ func runDryRun(request *joblib.JobCreateRequest) error {
 			"job":          job,
 			"would_create": true,
 		}
-		PrintJSON(dryRunResult)
+		if err := PrintJSON(dryRunResult); err != nil {
+			return fmt.Errorf("failed to output JSON: %w", err)
+		}
 	} else {
 		fmt.Printf("Dry-run validation successful!\n")
 		fmt.Printf("\nJob would be created with the following configuration:\n")

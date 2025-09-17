@@ -8,14 +8,19 @@ import (
 )
 
 const (
+	// ErrInvalidNotificationType is the error message format for invalid notification types
 	ErrInvalidNotificationType = "invalid notification type: %s"
 )
 
+// NotificationType represents the type of notification to send
 type NotificationType string
 
 const (
+	// NotificationSuccess indicates a successful job completion
 	NotificationSuccess    NotificationType = "Success"
+	// NotificationFailure indicates a failed job completion
 	NotificationFailure    NotificationType = "Failure"
+	// NotificationTerminated indicates a job that was terminated before completion
 	NotificationTerminated NotificationType = "Terminated"
 )
 
@@ -29,10 +34,12 @@ func (nt NotificationType) String() string {
 	return string(nt)
 }
 
+// IsValid checks if the NotificationType is one of the valid values
 func (nt NotificationType) IsValid() bool {
 	return validNotificationTypes[nt]
 }
 
+// UnmarshalJSON implements JSON unmarshaling for NotificationType
 func (nt *NotificationType) UnmarshalJSON(data []byte) error {
 	var str string
 	if err := json.Unmarshal(data, &str); err != nil {
@@ -48,6 +55,7 @@ func (nt *NotificationType) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// MarshalJSON implements JSON marshaling for NotificationType
 func (nt NotificationType) MarshalJSON() ([]byte, error) {
 	if !nt.IsValid() {
 		return nil, fmt.Errorf(ErrInvalidNotificationType, nt)
@@ -55,6 +63,7 @@ func (nt NotificationType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(string(nt))
 }
 
+// Notification represents a webhook notification for job events
 type Notification struct {
 	JobID      string           `json:"job_id"`
 	Type       NotificationType `json:"type"`
@@ -68,6 +77,7 @@ type Notification struct {
 	ExitCode   *int             `json:"exit_code,omitempty"`
 }
 
+// NewNotification creates a new Notification with the provided parameters
 func NewNotification(jobID string, notificationType NotificationType, webhookURL string) (*Notification, error) {
 	if jobID == "" {
 		return nil, fmt.Errorf("job ID cannot be empty")
@@ -90,6 +100,7 @@ func NewNotification(jobID string, notificationType NotificationType, webhookURL
 	}, nil
 }
 
+// Validate checks if the Notification has valid field values
 func (n *Notification) Validate() error {
 	if n.JobID == "" {
 		return fmt.Errorf("job ID cannot be empty")
@@ -118,33 +129,40 @@ func (n *Notification) Validate() error {
 	return nil
 }
 
+// CanRetry returns true if the notification can be retried
 func (n *Notification) CanRetry() bool {
 	return n.RetryCount < 5
 }
 
+// IncrementRetry increments the retry count and sets the error message
 func (n *Notification) IncrementRetry(errorMessage string) {
 	n.RetryCount++
 	n.LastError = errorMessage
 	n.SentAt = time.Now().UTC()
 }
 
+// MarkSent marks the notification as successfully sent
 func (n *Notification) MarkSent(messageID string) {
 	n.MessageID = messageID
 	n.LastError = ""
 }
 
+// GetStorageKey returns a unique key for storing this notification
 func (n *Notification) GetStorageKey() string {
 	return fmt.Sprintf("%s:%d", n.JobID, n.SentAt.UnixNano())
 }
 
+// IsOlderThan returns true if the notification is older than the specified duration
 func (n *Notification) IsOlderThan(duration time.Duration) bool {
 	return time.Since(n.SentAt) > duration
 }
 
+// ShouldArchive returns true if the notification should be archived
 func (n *Notification) ShouldArchive() bool {
 	return n.IsOlderThan(24 * time.Hour)
 }
 
+// GetTitle returns the notification title based on the notification type
 func (n *Notification) GetTitle() string {
 	switch n.Type {
 	case NotificationSuccess:
@@ -158,6 +176,7 @@ func (n *Notification) GetTitle() string {
 	}
 }
 
+// GetColor returns the color for the notification based on the type
 func (n *Notification) GetColor() string {
 	switch n.Type {
 	case NotificationSuccess:
@@ -171,6 +190,7 @@ func (n *Notification) GetColor() string {
 	}
 }
 
+// FormatMessage formats the notification message with job details
 func (n *Notification) FormatMessage(job *Job) string {
 	message := fmt.Sprintf("**Job:** %s\n", job.Name)
 	message += fmt.Sprintf("**ID:** %s\n", job.ID)
@@ -201,6 +221,7 @@ func (n *Notification) FormatMessage(job *Job) string {
 	return message
 }
 
+// Clone creates a deep copy of the Notification
 func (n *Notification) Clone() *Notification {
 	clone := &Notification{
 		JobID:      n.JobID,
@@ -222,6 +243,7 @@ func (n *Notification) Clone() *Notification {
 	return clone
 }
 
+// ValidateWebhookURL validates that the webhook URL is properly formatted
 func ValidateWebhookURL(webhookURL string) error {
 	if webhookURL == "" {
 		return fmt.Errorf("webhook URL cannot be empty")
@@ -249,6 +271,7 @@ func ValidateWebhookURL(webhookURL string) error {
 	return nil
 }
 
+// ParseNotificationType parses a string into a NotificationType
 func ParseNotificationType(s string) (NotificationType, error) {
 	notificationType := NotificationType(s)
 	if !notificationType.IsValid() {
@@ -257,6 +280,7 @@ func ParseNotificationType(s string) (NotificationType, error) {
 	return notificationType, nil
 }
 
+// AllNotificationTypes returns all valid NotificationType values
 func AllNotificationTypes() []NotificationType {
 	return []NotificationType{
 		NotificationSuccess,
@@ -265,6 +289,7 @@ func AllNotificationTypes() []NotificationType {
 	}
 }
 
+// NotificationTypeFromJobStatus converts a JobStatus to the appropriate NotificationType
 func NotificationTypeFromJobStatus(status JobStatus) (NotificationType, error) {
 	switch status {
 	case StatusCompleted:

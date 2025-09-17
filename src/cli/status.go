@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/berkunal/joblin/src/models"
@@ -41,7 +42,8 @@ func init() {
 	statusCmd.Flags().StringVar(&statusFlags.Interval, "interval", "5s", "polling interval for watch mode")
 
 	// Set up job ID completion for the first argument
-	statusCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	statusCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string,
+		cobra.ShellCompDirective) {
 		if len(args) == 0 {
 			return jobIDCompletion(cmd, args, toComplete)
 		}
@@ -49,7 +51,7 @@ func init() {
 	}
 }
 
-func runStatus(cmd *cobra.Command, args []string) error {
+func runStatus(_ *cobra.Command, args []string) error {
 	jobID := args[0]
 
 	if err := ValidateJobID(jobID); err != nil {
@@ -75,7 +77,9 @@ func showJobStatus(jobID string) error {
 	}
 
 	if globalFlags.JSONOutput {
-		PrintJSON(job)
+		if err := PrintJSON(job); err != nil {
+			return fmt.Errorf("failed to output JSON: %w", err)
+		}
 		return nil
 	}
 
@@ -160,7 +164,9 @@ func watchJobStatusJSON(jobID string, interval time.Duration) error {
 				"timestamp": time.Now(),
 				"job_id":    jobID,
 			}
-			PrintJSON(errorData)
+			if jsonErr := PrintJSON(errorData); jsonErr != nil {
+				fmt.Fprintf(os.Stderr, "Error printing JSON: %v\n", jsonErr)
+			}
 			time.Sleep(interval)
 			continue
 		}
@@ -171,7 +177,9 @@ func watchJobStatusJSON(jobID string, interval time.Duration) error {
 			"finished":  job.IsFinished(),
 		}
 
-		PrintJSON(statusUpdate)
+		if jsonErr := PrintJSON(statusUpdate); jsonErr != nil {
+			fmt.Fprintf(os.Stderr, "Error printing JSON: %v\n", jsonErr)
+		}
 
 		if job.IsFinished() {
 			return nil

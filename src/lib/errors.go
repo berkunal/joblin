@@ -9,16 +9,27 @@ import (
 type ErrorType string
 
 const (
+	// ErrorTypeValidation indicates validation-related errors
 	ErrorTypeValidation    ErrorType = "validation"
+	// ErrorTypeConfiguration indicates configuration-related errors
 	ErrorTypeConfiguration ErrorType = "configuration"
+	// ErrorTypeNetwork indicates network-related errors
 	ErrorTypeNetwork       ErrorType = "network"
+	// ErrorTypeKubernetes indicates Kubernetes-related errors
 	ErrorTypeKubernetes    ErrorType = "kubernetes"
+	// ErrorTypeStorage indicates storage-related errors
 	ErrorTypeStorage       ErrorType = "storage"
+	// ErrorTypeNotification indicates notification-related errors
 	ErrorTypeNotification  ErrorType = "notification"
+	// ErrorTypeInternal indicates internal system errors
 	ErrorTypeInternal      ErrorType = "internal"
+	// ErrorTypeNotFound indicates resource not found errors
 	ErrorTypeNotFound      ErrorType = "not_found"
+	// ErrorTypeConflict indicates resource conflict errors
 	ErrorTypeConflict      ErrorType = "conflict"
+	// ErrorTypeTimeout indicates timeout-related errors
 	ErrorTypeTimeout       ErrorType = "timeout"
+	// ErrorTypeUnauthorized indicates authentication/authorization errors
 	ErrorTypeUnauthorized  ErrorType = "unauthorized"
 )
 
@@ -91,6 +102,7 @@ func (e *JoblinError) GetUserMessage() string {
 
 // Error constructors for common error types
 
+// NewValidationError creates a new validation error
 func NewValidationError(code, message string) *JoblinError {
 	return &JoblinError{
 		Type:       ErrorTypeValidation,
@@ -101,6 +113,7 @@ func NewValidationError(code, message string) *JoblinError {
 	}
 }
 
+// NewConfigurationError creates a new configuration error
 func NewConfigurationError(code, message string) *JoblinError {
 	return &JoblinError{
 		Type:       ErrorTypeConfiguration,
@@ -111,6 +124,7 @@ func NewConfigurationError(code, message string) *JoblinError {
 	}
 }
 
+// NewNetworkError creates a new network error
 func NewNetworkError(code, message string) *JoblinError {
 	return &JoblinError{
 		Type:       ErrorTypeNetwork,
@@ -121,6 +135,7 @@ func NewNetworkError(code, message string) *JoblinError {
 	}
 }
 
+// NewKubernetesError creates a new Kubernetes error
 func NewKubernetesError(code, message string) *JoblinError {
 	return &JoblinError{
 		Type:       ErrorTypeKubernetes,
@@ -131,6 +146,7 @@ func NewKubernetesError(code, message string) *JoblinError {
 	}
 }
 
+// NewStorageError creates a new storage error
 func NewStorageError(code, message string) *JoblinError {
 	return &JoblinError{
 		Type:       ErrorTypeStorage,
@@ -141,6 +157,7 @@ func NewStorageError(code, message string) *JoblinError {
 	}
 }
 
+// NewNotificationError creates a new notification error
 func NewNotificationError(code, message string) *JoblinError {
 	return &JoblinError{
 		Type:       ErrorTypeNotification,
@@ -151,6 +168,7 @@ func NewNotificationError(code, message string) *JoblinError {
 	}
 }
 
+// NewNotFoundError creates a new not found error
 func NewNotFoundError(code, message string) *JoblinError {
 	return &JoblinError{
 		Type:       ErrorTypeNotFound,
@@ -161,6 +179,7 @@ func NewNotFoundError(code, message string) *JoblinError {
 	}
 }
 
+// NewConflictError creates a new conflict error
 func NewConflictError(code, message string) *JoblinError {
 	return &JoblinError{
 		Type:       ErrorTypeConflict,
@@ -171,6 +190,7 @@ func NewConflictError(code, message string) *JoblinError {
 	}
 }
 
+// NewTimeoutError creates a new timeout error
 func NewTimeoutError(code, message string) *JoblinError {
 	return &JoblinError{
 		Type:       ErrorTypeTimeout,
@@ -181,6 +201,7 @@ func NewTimeoutError(code, message string) *JoblinError {
 	}
 }
 
+// NewInternalError creates a new internal error
 func NewInternalError(code, message string) *JoblinError {
 	return &JoblinError{
 		Type:       ErrorTypeInternal,

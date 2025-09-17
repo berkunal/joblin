@@ -1,3 +1,4 @@
+// Package cli provides command-line interface implementations for the Joblin application.
 package cli
 
 import (
@@ -44,12 +45,14 @@ func init() {
 	cleanupCmd.Flags().BoolVar(&cleanupFlags.DryRun, "dry-run", false, "show what would be cleaned without doing it")
 	cleanupCmd.Flags().BoolVar(&cleanupFlags.Force, "force", false, "force cleanup without confirmation")
 	cleanupCmd.Flags().StringVar(&cleanupFlags.Age, "age", "", "minimum age for cleanup (e.g., 1h, 24h, 7d)")
-	cleanupCmd.Flags().BoolVar(&cleanupFlags.IncludeRunning, "include-running", false, "include running jobs in cleanup (dangerous)")
-	cleanupCmd.Flags().BoolVar(&cleanupFlags.IncludeNotifications, "notifications-only", false, "only clean up notification history")
+	cleanupCmd.Flags().BoolVar(&cleanupFlags.IncludeRunning, "include-running", false,
+		"include running jobs in cleanup (dangerous)")
+	cleanupCmd.Flags().BoolVar(&cleanupFlags.IncludeNotifications, "notifications-only", false,
+		"only clean up notification history")
 	cleanupCmd.Flags().StringVar(&cleanupFlags.Namespace, "namespace", "", "limit cleanup to specific namespace")
 }
 
-func runCleanup(cmd *cobra.Command, args []string) error {
+func runCleanup(_ *cobra.Command, _ []string) error {
 	// Parse age filter if provided
 	var ageThreshold time.Time
 	if cleanupFlags.Age != "" {
@@ -179,7 +182,7 @@ type jobInfo struct {
 	Reason string
 }
 
-func shouldCleanupJob(job interface{}, ageThreshold time.Time) (bool, string) {
+func shouldCleanupJob(_ interface{}, _ time.Time) (bool, string) {
 	// This is a placeholder - in real implementation, you'd cast job to *models.Job
 	// and implement the actual logic based on job.IsExpired(), job.IsFinished(), etc.
 
@@ -230,7 +233,7 @@ func showCleanupPreview(jobsToCleanup []*jobInfo) error {
 	return nil
 }
 
-func performCleanup(ctx interface{}, jobsToCleanup []*jobInfo, startTime time.Time) error {
+func performCleanup(_ interface{}, jobsToCleanup []*jobInfo, startTime time.Time) error {
 	if len(jobsToCleanup) == 0 {
 		if globalFlags.JSONOutput {
 			result := map[string]interface{}{

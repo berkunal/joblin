@@ -2,7 +2,6 @@ package cli
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"io"
 	"sort"
@@ -50,13 +49,15 @@ Examples:
 func init() {
 	logsCmd.Flags().BoolVarP(&logsFlags.Follow, "follow", "f", false, "follow log output (for running jobs)")
 	logsCmd.Flags().IntVar(&logsFlags.Tail, "tail", 100, "number of lines to show from the end")
-	logsCmd.Flags().StringVar(&logsFlags.Since, "since", "", "show logs since timestamp (e.g., 5m, 1h, 2006-01-02T15:04:05Z)")
+	logsCmd.Flags().StringVar(&logsFlags.Since, "since", "",
+		"show logs since timestamp (e.g., 5m, 1h, 2006-01-02T15:04:05Z)")
 	logsCmd.Flags().StringVar(&logsFlags.Source, "source", "stdout", "log source: stdout, stderr, system, all")
 	logsCmd.Flags().BoolVar(&logsFlags.NoColor, "no-color", false, "disable colored output")
 	logsCmd.Flags().BoolVar(&logsFlags.Timestamp, "timestamp", false, "show timestamps")
 
 	// Set up job ID completion for the first argument
-	logsCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	logsCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string,
+		cobra.ShellCompDirective) {
 		if len(args) == 0 {
 			return jobIDCompletion(cmd, args, toComplete)
 		}
@@ -64,7 +65,8 @@ func init() {
 	}
 
 	// Set up completion for the source flag
-	if err := logsCmd.RegisterFlagCompletionFunc("source", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err := logsCmd.RegisterFlagCompletionFunc("source",
+		func(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		sources := []string{"stdout", "stderr", "system", "all"}
 		var filtered []string
 		for _, source := range sources {
@@ -88,7 +90,7 @@ func init() {
 	}
 }
 
-func runLogs(cmd *cobra.Command, args []string) error {
+func runLogs(_ *cobra.Command, args []string) error {
 	jobID := args[0]
 
 	if err := ValidateJobID(jobID); err != nil {
@@ -163,7 +165,7 @@ func followLogs(job *models.Job) error {
 	return displayLogsFromReader(logReader, job.ID)
 }
 
-func displayLogsFromReader(reader io.ReadCloser, jobID string) error {
+func displayLogsFromReader(reader io.ReadCloser, _ string) error {
 	scanner := bufio.NewScanner(reader)
 	lineCount := 0
 
@@ -334,35 +336,3 @@ func contains(slice []string, item string) bool {
 	return false
 }
 
-// saveLogFromReader saves logs from a reader to storage for future retrieval
-func saveLogFromReader(ctx context.Context, reader io.ReadCloser, jobID string) {
-	defer func() {
-		if closeErr := reader.Close(); closeErr != nil {
-			fmt.Printf("Warning: Failed to close reader: %v\n", closeErr)
-		}
-	}()
-
-	scanner := bufio.NewScanner(reader)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-
-		// Create log entry
-		logEntry, err := models.NewJobLog(jobID, models.LogSourceStdout, line, "")
-		if err != nil {
-			cliContext.Logger.Warnf("Failed to create log entry: %v", err)
-			continue
-		}
-
-		// Save to storage
-		if err := cliContext.JobService.SaveJobLog(logEntry); err != nil {
-			cliContext.Logger.Warnf("Failed to save log entry: %v", err)
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		cliContext.Logger.Warnf("Error reading logs for storage: %v", err)
-	}
-}

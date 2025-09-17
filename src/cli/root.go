@@ -13,10 +13,13 @@ import (
 )
 
 const (
+	// AppName is the name of the CLI application
 	AppName    = "joblin"
+	// AppVersion is the current version of the CLI application
 	AppVersion = "0.1.0"
 )
 
+// GlobalFlags holds global command-line flags used across all commands
 type GlobalFlags struct {
 	ConfigFile string
 	Context    string
@@ -49,14 +52,15 @@ Examples:
   joblin cleanup --dry-run
   joblin config set webhook-url https://hooks.teams.microsoft.com/...`,
 	Version: AppVersion,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+	PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 		return initializeCLI()
 	},
-	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+	PersistentPostRunE: func(_ *cobra.Command, _ []string) error {
 		return cleanupCLI()
 	},
 }
 
+// Execute runs the root command and handles the CLI application lifecycle
 func Execute() error {
 	return rootCmd.Execute()
 }
@@ -65,9 +69,12 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	// Global flags
-	rootCmd.PersistentFlags().StringVar(&globalFlags.ConfigFile, "config", "", "config file (default is $HOME/.joblin/config.yaml)")
-	rootCmd.PersistentFlags().StringVar(&globalFlags.Context, "context", "", "Kubernetes context to use (overrides config)")
-	rootCmd.PersistentFlags().StringVarP(&globalFlags.Namespace, "namespace", "n", "", "Kubernetes namespace (overrides config)")
+	rootCmd.PersistentFlags().StringVar(&globalFlags.ConfigFile, "config", "",
+		"config file (default is $HOME/.joblin/config.yaml)")
+	rootCmd.PersistentFlags().StringVar(&globalFlags.Context, "context", "",
+		"Kubernetes context to use (overrides config)")
+	rootCmd.PersistentFlags().StringVarP(&globalFlags.Namespace, "namespace", "n", "",
+		"Kubernetes namespace (overrides config)")
 	rootCmd.PersistentFlags().BoolVar(&globalFlags.JSONOutput, "json", false, "output in JSON format")
 	rootCmd.PersistentFlags().BoolVarP(&globalFlags.Verbose, "verbose", "v", false, "verbose output")
 	rootCmd.PersistentFlags().StringVar(&globalFlags.LogLevel, "log-level", "", "log level (debug, info, warn, error)")
@@ -179,6 +186,7 @@ func cleanupCLI() error {
 
 // Helper functions for commands
 
+// GetEffectiveNamespace returns the namespace to use for operations
 func GetEffectiveNamespace() string {
 	if configMgr != nil {
 		return configMgr.GetEffectiveNamespace(globalFlags.Namespace)
@@ -186,6 +194,7 @@ func GetEffectiveNamespace() string {
 	return globalFlags.Namespace
 }
 
+// GetEffectiveContext returns the Kubernetes context to use
 func GetEffectiveContext() string {
 	if configMgr != nil {
 		return configMgr.GetEffectiveContext()
@@ -193,12 +202,14 @@ func GetEffectiveContext() string {
 	return globalFlags.Context
 }
 
+// PrintJSON outputs data in JSON format
 func PrintJSON(data interface{}) error {
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(data)
 }
 
+// PrintError displays an error message to the user
 func PrintError(err error) {
 	if errorHandler != nil {
 		errorHandler.HandleError(GetContext(), err, "unknown")
@@ -209,13 +220,16 @@ func PrintError(err error) {
 				"error":   err.Error(),
 				"success": false,
 			}
-			PrintJSON(errorData)
+			if jsonErr := PrintJSON(errorData); jsonErr != nil {
+				fmt.Fprintf(os.Stderr, "Error printing JSON: %v\n", jsonErr)
+			}
 		} else {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		}
 	}
 }
 
+// PrintSuccess displays a success message to the user
 func PrintSuccess(message string, data interface{}) {
 	if errorHandler != nil {
 		errorHandler.HandleSuccess(GetContext(), message, data)
@@ -229,7 +243,9 @@ func PrintSuccess(message string, data interface{}) {
 			if data != nil {
 				result["data"] = data
 			}
-			PrintJSON(result)
+			if jsonErr := PrintJSON(result); jsonErr != nil {
+				fmt.Fprintf(os.Stderr, "Error printing JSON: %v\n", jsonErr)
+			}
 		} else {
 			fmt.Println(message)
 			if data != nil && globalFlags.Verbose {
@@ -239,6 +255,7 @@ func PrintSuccess(message string, data interface{}) {
 	}
 }
 
+// GetContext returns a context for operations
 func GetContext() context.Context {
 	if configMgr != nil {
 		return configMgr.GetContext()
@@ -246,6 +263,7 @@ func GetContext() context.Context {
 	return context.Background()
 }
 
+// ValidateJobID validates that a job ID is properly formatted
 func ValidateJobID(jobID string) error {
 	if errorHandler != nil {
 		return errorHandler.RequireJobID(jobID)
@@ -256,14 +274,17 @@ func ValidateJobID(jobID string) error {
 	return nil
 }
 
+// GetErrorHandler returns the global error handler instance
 func GetErrorHandler() *lib.CLIErrorHandler {
 	return errorHandler
 }
 
+// CreateOperationContext creates a context with operation metadata
 func CreateOperationContext(operation string) context.Context {
 	return lib.WithOperationContext(GetContext(), operation)
 }
 
+// CreateJobContext creates a context with job metadata
 func CreateJobContext(jobID, jobName, namespace string) context.Context {
 	return lib.WithJobContext(GetContext(), jobID, jobName, namespace)
 }

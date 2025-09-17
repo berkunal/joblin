@@ -35,7 +35,8 @@ func init() {
 	terminateCmd.Flags().StringVar(&terminateFlags.Timeout, "timeout", "30s", "timeout for termination operation")
 
 	// Set up job ID completion for the first argument
-	terminateCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	terminateCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string,
+		cobra.ShellCompDirective) {
 		if len(args) == 0 {
 			return jobIDCompletion(cmd, args, toComplete)
 		}
@@ -43,7 +44,7 @@ func init() {
 	}
 }
 
-func runTerminate(cmd *cobra.Command, args []string) error {
+func runTerminate(_ *cobra.Command, args []string) error {
 	jobID := args[0]
 
 	if err := ValidateJobID(jobID); err != nil {
@@ -67,7 +68,9 @@ func runTerminate(cmd *cobra.Command, args []string) error {
 				"message": message,
 				"job":     job,
 			}
-			PrintJSON(result)
+			if jsonErr := PrintJSON(result); jsonErr != nil {
+				return fmt.Errorf("failed to output JSON: %w", jsonErr)
+			}
 		} else {
 			fmt.Printf("⚠️  %s\n", message)
 			fmt.Printf("Current status: %s\n", job.Status)
@@ -144,7 +147,9 @@ func runTerminate(cmd *cobra.Command, args []string) error {
 			"job":              updatedJob,
 			"termination_time": duration.Seconds(),
 		}
-		PrintJSON(result)
+		if jsonErr := PrintJSON(result); jsonErr != nil {
+			return fmt.Errorf("failed to output JSON: %w", jsonErr)
+		}
 	} else {
 		fmt.Printf("✅ Job terminated successfully!\n")
 		fmt.Printf("Job ID: %s\n", updatedJob.ID)

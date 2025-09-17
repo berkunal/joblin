@@ -1,3 +1,5 @@
+// Package notifylib provides notification services for sending job completion alerts via webhooks.
+// It supports Microsoft Teams webhooks with retry logic and message formatting.
 package notifylib
 
 import (
@@ -13,12 +15,17 @@ import (
 )
 
 const (
+	// DefaultTimeout is the default timeout for webhook HTTP requests
 	DefaultTimeout     = 30 * time.Second
+	// MaxRetryAttempts is the maximum number of retry attempts for failed notifications
 	MaxRetryAttempts   = 5
+	// RetryBackoffFactor is the exponential backoff factor for retry delays
 	RetryBackoffFactor = 2
+	// InitialRetryDelay is the initial delay before the first retry attempt
 	InitialRetryDelay  = 1 * time.Second
 )
 
+// TeamsMessage represents a Microsoft Teams webhook message structure
 type TeamsMessage struct {
 	Type       string                `json:"@type"`
 	Context    string                `json:"@context"`
@@ -28,6 +35,7 @@ type TeamsMessage struct {
 	Actions    []TeamsMessageAction  `json:"potentialAction,omitempty"`
 }
 
+// TeamsMessageSection represents a section within a Teams message
 type TeamsMessageSection struct {
 	ActivityTitle    string             `json:"activityTitle"`
 	ActivitySubtitle string             `json:"activitySubtitle,omitempty"`
@@ -36,27 +44,32 @@ type TeamsMessageSection struct {
 	Text             string             `json:"text,omitempty"`
 }
 
+// TeamsMessageFact represents a fact within a Teams message section
 type TeamsMessageFact struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
 
+// TeamsMessageAction represents an action button in a Teams message
 type TeamsMessageAction struct {
 	Type    string                     `json:"@type"`
 	Name    string                     `json:"name"`
 	Targets []TeamsMessageActionTarget `json:"targets"`
 }
 
+// TeamsMessageActionTarget represents a target for a Teams message action
 type TeamsMessageActionTarget struct {
 	OS  string `json:"os"`
 	URI string `json:"uri"`
 }
 
+// NotificationService handles sending webhook notifications for job events
 type NotificationService struct {
 	httpClient *http.Client
 	logger     *logrus.Logger
 }
 
+// NewNotificationService creates a new notification service with the specified logger
 func NewNotificationService(logger *logrus.Logger) *NotificationService {
 	if logger == nil {
 		logger = logrus.New()
@@ -71,7 +84,9 @@ func NewNotificationService(logger *logrus.Logger) *NotificationService {
 	}
 }
 
-func (n *NotificationService) SendNotification(ctx context.Context, notification *models.Notification, job *models.Job) error {
+// SendNotification sends a webhook notification for a job event
+func (n *NotificationService) SendNotification(ctx context.Context, notification *models.Notification,
+	job *models.Job) error {
 	if err := notification.Validate(); err != nil {
 		return fmt.Errorf("invalid notification: %w", err)
 	}
@@ -84,7 +99,9 @@ func (n *NotificationService) SendNotification(ctx context.Context, notification
 	return n.sendTeamsMessage(ctx, notification.WebhookURL, message)
 }
 
-func (n *NotificationService) SendNotificationWithRetry(ctx context.Context, notification *models.Notification, job *models.Job) error {
+// SendNotificationWithRetry sends a notification with automatic retry logic on failure
+func (n *NotificationService) SendNotificationWithRetry(ctx context.Context, notification *models.Notification,
+	job *models.Job) error {
 	var lastError error
 
 	for attempt := 0; attempt < MaxRetryAttempts; attempt++ {
@@ -135,7 +152,8 @@ func (n *NotificationService) calculateRetryDelay(attempt int) time.Duration {
 	return delay
 }
 
-func (n *NotificationService) buildTeamsMessage(notification *models.Notification, job *models.Job) (*TeamsMessage, error) {
+func (n *NotificationService) buildTeamsMessage(notification *models.Notification,
+	job *models.Job) (*TeamsMessage, error) {
 	facts := n.buildMessageFacts(notification, job)
 
 	message := &TeamsMessage{
@@ -234,10 +252,14 @@ func (n *NotificationService) sendTeamsMessage(ctx context.Context, webhookURL s
 	if err != nil {
 		return fmt.Errorf("failed to send HTTP request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			n.logger.WithError(err).Warn("Failed to close response body")
+		}
+	}()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("Teams webhook returned non-success status: %d", resp.StatusCode)
+		return fmt.Errorf("teams webhook returned non-success status: %d", resp.StatusCode)
 	}
 
 	n.logger.WithFields(logrus.Fields{
@@ -248,6 +270,7 @@ func (n *NotificationService) sendTeamsMessage(ctx context.Context, webhookURL s
 	return nil
 }
 
+// CreateJobNotification creates a notification for a job based on its status
 func (n *NotificationService) CreateJobNotification(job *models.Job, webhookURL string) (*models.Notification, error) {
 	if !job.IsFinished() {
 		return nil, fmt.Errorf("cannot create notification for unfinished job")
@@ -273,7 +296,9 @@ func (n *NotificationService) CreateJobNotification(job *models.Job, webhookURL 
 	return notification, nil
 }
 
-func (n *NotificationService) SendJobCompletionNotification(ctx context.Context, job *models.Job, webhookURL string) (*models.Notification, error) {
+// SendJobCompletionNotification sends a completion notification for a job
+func (n *NotificationService) SendJobCompletionNotification(
+	ctx context.Context, job *models.Job, webhookURL string) (*models.Notification, error) {
 	notification, err := n.CreateJobNotification(job, webhookURL)
 	if err != nil {
 		return nil, err
@@ -287,6 +312,7 @@ func (n *NotificationService) SendJobCompletionNotification(ctx context.Context,
 	return notification, nil
 }
 
+// TestWebhook sends a test notification to verify webhook connectivity
 func (n *NotificationService) TestWebhook(ctx context.Context, webhookURL string) error {
 	testJob, err := models.NewJob("test-job", "/tmp/test.py", []byte("print('Hello, World!')"), nil)
 	if err != nil {
@@ -303,6 +329,7 @@ func (n *NotificationService) TestWebhook(ctx context.Context, webhookURL string
 	return n.SendNotification(ctx, notification, testJob)
 }
 
+// ValidateWebhookURL validates a webhook URL by sending a test request
 func (n *NotificationService) ValidateWebhookURL(ctx context.Context, webhookURL string) error {
 	req, err := http.NewRequestWithContext(ctx, "HEAD", webhookURL, nil)
 	if err != nil {
@@ -317,7 +344,11 @@ func (n *NotificationService) ValidateWebhookURL(ctx context.Context, webhookURL
 	if err != nil {
 		return fmt.Errorf("webhook URL is not reachable: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			n.logger.WithError(err).Warn("Failed to close response body")
+		}
+	}()
 
 	if resp.StatusCode == http.StatusMethodNotAllowed {
 		// HEAD not allowed, but URL is reachable
@@ -331,14 +362,17 @@ func (n *NotificationService) ValidateWebhookURL(ctx context.Context, webhookURL
 	return nil
 }
 
+// GetSupportedWebhookTypes returns a list of supported webhook types
 func (n *NotificationService) GetSupportedWebhookTypes() []string {
 	return []string{"teams"}
 }
 
+// SetTimeout sets the HTTP timeout for webhook requests
 func (n *NotificationService) SetTimeout(timeout time.Duration) {
 	n.httpClient.Timeout = timeout
 }
 
+// SetLogger sets the logger for the notification service
 func (n *NotificationService) SetLogger(logger *logrus.Logger) {
 	n.logger = logger
 }

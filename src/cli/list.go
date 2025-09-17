@@ -61,7 +61,8 @@ func init() {
 	}
 
 	// Set up completion for the sort-by flag
-	if err := listCmd.RegisterFlagCompletionFunc("sort-by", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err := listCmd.RegisterFlagCompletionFunc("sort-by",
+		func(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		sortOptions := []string{"name", "status", "created", "started", "duration"}
 		var filtered []string
 		for _, option := range sortOptions {
@@ -86,7 +87,7 @@ func init() {
 	}
 }
 
-func runList(cmd *cobra.Command, args []string) error {
+func runList(_ *cobra.Command, _ []string) error {
 	// Parse filters
 	var status models.JobStatus
 	if listFlags.Status != "" {
@@ -148,7 +149,9 @@ func runList(cmd *cobra.Command, args []string) error {
 			"jobs":  jobs,
 			"count": len(jobs),
 		}
-		PrintJSON(result)
+		if err := PrintJSON(result); err != nil {
+			return fmt.Errorf("failed to output JSON: %w", err)
+		}
 		return nil
 	}
 
@@ -274,11 +277,11 @@ func formatJobStatus(status models.JobStatus, useColor bool) string {
 func formatDuration(d time.Duration) string {
 	if d < time.Minute {
 		return fmt.Sprintf("%.0fs", d.Seconds())
-	} else if d < time.Hour {
-		return fmt.Sprintf("%.0fm", d.Minutes())
-	} else {
-		return fmt.Sprintf("%.1fh", d.Hours())
 	}
+	if d < time.Hour {
+		return fmt.Sprintf("%.0fm", d.Minutes())
+	}
+	return fmt.Sprintf("%.1fh", d.Hours())
 }
 
 func formatLabels(labels map[string]string, maxLen int) string {

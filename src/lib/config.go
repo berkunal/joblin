@@ -15,6 +15,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
+// ConfigManager manages CLI configuration and service initialization
 type ConfigManager struct {
 	cliConfig      *models.CLIConfig
 	kubeConfigPath string
@@ -23,15 +24,17 @@ type ConfigManager struct {
 	services       *ServiceContainer
 }
 
+// ServiceContainer holds all initialized services for the application
 type ServiceContainer struct {
 	Config       *models.CLIConfig
-	Storage      *storage.StorageService
+	Storage      *storage.Service
 	K8sService   *k8slib.K8sService
 	Notification *notifylib.NotificationService
 	JobService   *joblib.JobService
 	Logger       *Logger
 }
 
+// ConfigOptions holds command-line configuration options
 type ConfigOptions struct {
 	ConfigFile string
 	KubeConfig string
@@ -41,6 +44,7 @@ type ConfigOptions struct {
 	Verbose    bool
 }
 
+// NewConfigManager creates a new configuration manager with the provided options
 func NewConfigManager(options *ConfigOptions) (*ConfigManager, error) {
 	// Initialize structured logger
 	logger := NewConsoleLogger("config-manager")
@@ -82,6 +86,7 @@ func NewConfigManager(options *ConfigOptions) (*ConfigManager, error) {
 	}, nil
 }
 
+// InitializeServices initializes all application services
 func (cm *ConfigManager) InitializeServices() (*ServiceContainer, error) {
 	ctx := WithOperationContext(context.Background(), "initialize-services")
 
@@ -94,7 +99,7 @@ func (cm *ConfigManager) InitializeServices() (*ServiceContainer, error) {
 		}
 
 		// Initialize storage service
-		storageService, err := storage.NewStorageService(cm.cliConfig.GetDatabasePath())
+		storageService, err := storage.NewService(cm.cliConfig.GetDatabasePath())
 		if err != nil {
 			return NewStorageError("STORAGE_INIT_FAILED",
 				"Failed to initialize storage service").WithCause(err).
@@ -152,6 +157,7 @@ func (cm *ConfigManager) InitializeServices() (*ServiceContainer, error) {
 	return cm.services, nil
 }
 
+// GetEffectiveNamespace returns the namespace to use, preferring override over default
 func (cm *ConfigManager) GetEffectiveNamespace(override string) string {
 	if override != "" {
 		return override
@@ -159,14 +165,17 @@ func (cm *ConfigManager) GetEffectiveNamespace(override string) string {
 	return cm.cliConfig.DefaultNamespace
 }
 
+// GetEffectiveContext returns the current Kubernetes context
 func (cm *ConfigManager) GetEffectiveContext() string {
 	return cm.currentContext
 }
 
+// GetConfig returns the CLI configuration
 func (cm *ConfigManager) GetConfig() *models.CLIConfig {
 	return cm.cliConfig
 }
 
+// Close cleanly shuts down all services
 func (cm *ConfigManager) Close(services *ServiceContainer) error {
 	if services != nil && services.JobService != nil {
 		return services.JobService.Close()
@@ -299,10 +308,12 @@ func (cm *ConfigManager) testConnections(k8sService *k8slib.K8sService) error {
 	return nil
 }
 
+// GetContext returns a base context for operations
 func (cm *ConfigManager) GetContext() context.Context {
 	return context.Background()
 }
 
+// GetKubeConfigInfo returns information about the current Kubernetes configuration
 func (cm *ConfigManager) GetKubeConfigInfo() map[string]interface{} {
 	return map[string]interface{}{
 		"kubeconfig_path": cm.kubeConfigPath,

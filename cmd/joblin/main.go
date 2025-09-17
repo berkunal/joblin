@@ -1,3 +1,5 @@
+// Package main provides the entry point for the Joblin CLI application.
+// Joblin is a tool for deploying and managing Python script jobs on Kubernetes clusters.
 package main
 
 import (

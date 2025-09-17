@@ -1,3 +1,5 @@
+// Package joblib provides job lifecycle management services for Kubernetes-based Python script execution.
+// It handles job creation, status monitoring, termination, and cleanup operations.
 package joblib
 
 import (
@@ -13,13 +15,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// JobService manages the lifecycle of Python script jobs on Kubernetes
 type JobService struct {
-	storage      *storage.StorageService
+	storage      *storage.Service
 	k8s          *k8slib.K8sService
 	notification *notifylib.NotificationService
 	logger       *logrus.Logger
 }
 
+// JobCreateRequest contains the parameters needed to create a new job
 type JobCreateRequest struct {
 	Name            string
 	ScriptPath      string
@@ -35,6 +39,7 @@ type JobCreateRequest struct {
 	Wait            bool
 }
 
+// JobListOptions provides filtering options when listing jobs
 type JobListOptions struct {
 	Status    models.JobStatus
 	Namespace string
@@ -42,7 +47,9 @@ type JobListOptions struct {
 	Limit     int
 }
 
-func NewJobService(storage *storage.StorageService, k8s *k8slib.K8sService, notification *notifylib.NotificationService, logger *logrus.Logger) *JobService {
+// NewJobService creates a new job service with the provided dependencies
+func NewJobService(storage *storage.Service, k8s *k8slib.K8sService,
+	notification *notifylib.NotificationService, logger *logrus.Logger) *JobService {
 	if logger == nil {
 		logger = logrus.New()
 		logger.SetLevel(logrus.InfoLevel)
@@ -56,6 +63,7 @@ func NewJobService(storage *storage.StorageService, k8s *k8slib.K8sService, noti
 	}
 }
 
+// CreateJob creates and deploys a new job to Kubernetes based on the provided request
 func (js *JobService) CreateJob(ctx context.Context, req *JobCreateRequest) (*models.Job, error) {
 	if err := js.validateCreateRequest(req); err != nil {
 		return nil, fmt.Errorf("invalid create request: %w", err)
@@ -98,12 +106,18 @@ func (js *JobService) CreateJob(ctx context.Context, req *JobCreateRequest) (*mo
 	}).Info("Job created successfully")
 
 	if err := js.k8s.CreateJob(ctx, job); err != nil {
-		js.storage.DeleteJob(job.ID)
+		if deleteErr := js.storage.DeleteJob(job.ID); deleteErr != nil {
+			// Log the cleanup error but return the original error
+			_, _ = fmt.Printf("Warning: Failed to cleanup job from storage: %v\n", deleteErr)
+		}
 		return nil, fmt.Errorf("failed to create Kubernetes job: %w", err)
 	}
 
 	job.SetStarted()
-	js.storage.UpdateJob(job)
+	if err := js.storage.UpdateJob(job); err != nil {
+		// Job was created in k8s but failed to update in storage
+		_, _ = fmt.Printf("Warning: Job created in Kubernetes but failed to update storage: %v\n", err)
+	}
 
 	js.logger.WithFields(logrus.Fields{
 		"job_id":       job.ID,
@@ -155,6 +169,7 @@ func (js *JobService) validateCreateRequest(req *JobCreateRequest) error {
 	return nil
 }
 
+// GetJob retrieves a job by its ID from storage
 func (js *JobService) GetJob(jobID string) (*models.Job, error) {
 	job, err := js.storage.GetJob(jobID)
 	if err != nil {
@@ -164,6 +179,7 @@ func (js *JobService) GetJob(jobID string) (*models.Job, error) {
 	return job, nil
 }
 
+// UpdateJobStatus updates a job's status by querying Kubernetes and updating storage
 func (js *JobService) UpdateJobStatus(ctx context.Context, jobID string) (*models.Job, error) {
 	job, err := js.storage.GetJob(jobID)
 	if err != nil {
@@ -264,12 +280,16 @@ func (js *JobService) sendCompletionNotification(ctx context.Context, job *model
 		}).Error("Failed to send completion notification")
 
 		if notification != nil {
-			js.storage.SaveNotification(notification)
+			if err := js.storage.SaveNotification(notification); err != nil {
+				js.logger.WithError(err).Error("Failed to save notification")
+			}
 		}
 		return
 	}
 
-	js.storage.SaveNotification(notification)
+	if err := js.storage.SaveNotification(notification); err != nil {
+		js.logger.WithError(err).Error("Failed to save notification")
+	}
 
 	js.logger.WithFields(logrus.Fields{
 		"job_id": job.ID,
@@ -277,6 +297,7 @@ func (js *JobService) sendCompletionNotification(ctx context.Context, job *model
 	}).Info("Completion notification sent successfully")
 }
 
+// TerminateJob terminates a running job by deleting it from Kubernetes
 func (js *JobService) TerminateJob(ctx context.Context, jobID string) error {
 	job, err := js.storage.GetJob(jobID)
 	if err != nil {
@@ -307,6 +328,7 @@ func (js *JobService) TerminateJob(ctx context.Context, jobID string) error {
 	return nil
 }
 
+// ListJobs retrieves a list of jobs based on the provided filtering options
 func (js *JobService) ListJobs(options *JobListOptions) ([]*models.Job, error) {
 	if options == nil {
 		return js.storage.ListJobs()
@@ -367,6 +389,7 @@ func (js *JobService) filterJobsByNamespace(jobs []*models.Job, namespace string
 	return filtered
 }
 
+// GetJobLogs retrieves logs for a job from Kubernetes
 func (js *JobService) GetJobLogs(ctx context.Context, jobID string, follow bool) (io.ReadCloser, error) {
 	job, err := js.storage.GetJob(jobID)
 	if err != nil {
@@ -376,14 +399,17 @@ func (js *JobService) GetJobLogs(ctx context.Context, jobID string, follow bool)
 	return js.k8s.GetJobLogs(ctx, job, follow)
 }
 
+// GetStoredJobLogs retrieves stored logs for a job from the database
 func (js *JobService) GetStoredJobLogs(jobID string) (models.JobLogCollection, error) {
 	return js.storage.GetJobLogs(jobID)
 }
 
+// SaveJobLog stores a job log entry in the database
 func (js *JobService) SaveJobLog(log *models.JobLog) error {
 	return js.storage.SaveJobLog(log)
 }
 
+// DeleteJob removes a job from both Kubernetes and the database
 func (js *JobService) DeleteJob(ctx context.Context, jobID string) error {
 	job, err := js.storage.GetJob(jobID)
 	if err != nil {
@@ -417,7 +443,8 @@ func (js *JobService) DeleteJob(ctx context.Context, jobID string) error {
 	return nil
 }
 
-func (js *JobService) CleanupJobs(ctx context.Context) (int, int, error) {
+// CleanupJobs removes expired jobs from both Kubernetes and the database
+func (js *JobService) CleanupJobs(_ context.Context) (int, int, error) {
 	expiredJobs, err := js.storage.CleanupExpiredJobs()
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to cleanup expired jobs: %w", err)
@@ -436,6 +463,7 @@ func (js *JobService) CleanupJobs(ctx context.Context) (int, int, error) {
 	return expiredJobs, oldNotifications, nil
 }
 
+// GetJobStats returns statistical information about jobs
 func (js *JobService) GetJobStats() (map[string]interface{}, error) {
 	stats, err := js.storage.GetStats()
 	if err != nil {
@@ -461,14 +489,16 @@ func (js *JobService) GetJobStats() (map[string]interface{}, error) {
 	return result, nil
 }
 
+// TestConnections verifies connectivity to all external services
 func (js *JobService) TestConnections(ctx context.Context) error {
 	if err := js.k8s.TestConnection(ctx); err != nil {
-		return fmt.Errorf("Kubernetes connection test failed: %w", err)
+		return fmt.Errorf("kubernetes connection test failed: %w", err)
 	}
 
 	return nil
 }
 
+// Close cleanly shuts down the job service and releases resources
 func (js *JobService) Close() error {
 	if js.storage != nil {
 		return js.storage.Close()

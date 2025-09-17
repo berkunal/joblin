@@ -70,7 +70,7 @@ PowerShell:
 // Completion functions for dynamic values - these need to be accessible from other CLI files
 
 // jobIDCompletion provides completion for job IDs
-func jobIDCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func jobIDCompletion(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	if cliContext != nil && cliContext.JobService != nil {
 		// Get available job IDs from the job service
 		jobs, err := cliContext.JobService.ListJobs(nil)
@@ -89,7 +89,7 @@ func jobIDCompletion(cmd *cobra.Command, args []string, toComplete string) ([]st
 }
 
 // namespaceCompletion provides completion for Kubernetes namespaces
-func namespaceCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func namespaceCompletion(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	// Return common namespace names
 	commonNamespaces := []string{"default", "kube-system", "kube-public", "kube-node-lease"}
 	var filtered []string
@@ -102,7 +102,7 @@ func namespaceCompletion(cmd *cobra.Command, args []string, toComplete string) (
 }
 
 // logLevelCompletion provides completion for log levels
-func logLevelCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func logLevelCompletion(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	logLevels := []string{"debug", "info", "warn", "error"}
 	var filtered []string
 	for _, level := range logLevels {
@@ -114,7 +114,7 @@ func logLevelCompletion(cmd *cobra.Command, args []string, toComplete string) ([
 }
 
 // jobStatusCompletion provides completion for job status values
-func jobStatusCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func jobStatusCompletion(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	statuses := []string{"Pending", "Running", "Succeeded", "Failed", "Terminated"}
 	var filtered []string
 	for _, status := range statuses {
@@ -125,11 +125,6 @@ func jobStatusCompletion(cmd *cobra.Command, args []string, toComplete string) (
 	return filtered, cobra.ShellCompDirectiveDefault
 }
 
-// fileCompletion provides file completion for script paths
-func scriptFileCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	// Complete with .py files
-	return nil, cobra.ShellCompDirectiveFilterFileExt
-}
 
 func init() {
 	// Note: The completion command will be added to rootCmd in root.go

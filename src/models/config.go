@@ -1,3 +1,5 @@
+// Package models defines the core data structures used throughout the Joblin application.
+// It includes configuration, job, notification, and resource specification models.
 package models
 
 import (
@@ -10,9 +12,11 @@ import (
 )
 
 const (
+	// DefaultDataDirName is the default directory name for Joblin data files
 	DefaultDataDirName = ".joblin"
 )
 
+// CLIConfig holds the configuration settings for the Joblin CLI
 type CLIConfig struct {
 	DefaultCluster   string        `yaml:"default_cluster" json:"default_cluster"`
 	DefaultNamespace string        `yaml:"default_namespace" json:"default_namespace"`
@@ -25,6 +29,7 @@ type CLIConfig struct {
 	LastUpdated      time.Time     `yaml:"last_updated" json:"last_updated"`
 }
 
+// NewCLIConfig creates a new CLI configuration with default values
 func NewCLIConfig() *CLIConfig {
 	homeDir, _ := os.UserHomeDir()
 	dataDir := filepath.Join(homeDir, DefaultDataDirName)
@@ -46,6 +51,7 @@ func NewCLIConfig() *CLIConfig {
 	}
 }
 
+// Validate checks the CLIConfig for any invalid configuration values
 func (c *CLIConfig) Validate() error {
 	if c.DefaultNamespace == "" {
 		return fmt.Errorf("default namespace cannot be empty")
@@ -80,6 +86,7 @@ func (c *CLIConfig) Validate() error {
 	return nil
 }
 
+// SetDefaults sets default values for all configuration fields
 func (c *CLIConfig) SetDefaults() {
 	if c.DefaultNamespace == "" {
 		c.DefaultNamespace = "default"
@@ -109,21 +116,25 @@ func (c *CLIConfig) SetDefaults() {
 	c.LastUpdated = time.Now().UTC()
 }
 
+// GetConfigPath returns the full path to the configuration file
 func (c *CLIConfig) GetConfigPath() string {
 	return filepath.Join(c.DataDir, "config.yaml")
 }
 
+// GetDatabasePath returns the full path to the database file
 func (c *CLIConfig) GetDatabasePath() string {
 	return filepath.Join(c.DataDir, "joblin.db")
 }
 
+// EnsureDataDirectory creates the data directory if it doesn't exist
 func (c *CLIConfig) EnsureDataDirectory() error {
-	if err := os.MkdirAll(c.DataDir, 0755); err != nil {
+	if err := os.MkdirAll(c.DataDir, 0750); err != nil {
 		return fmt.Errorf("failed to create data directory %s: %w", c.DataDir, err)
 	}
 	return nil
 }
 
+// Save writes the configuration to the config file
 func (c *CLIConfig) Save() error {
 	if err := c.Validate(); err != nil {
 		return fmt.Errorf("invalid configuration: %w", err)
@@ -141,13 +152,14 @@ func (c *CLIConfig) Save() error {
 		return fmt.Errorf("failed to marshal config to YAML: %w", err)
 	}
 
-	if err := os.WriteFile(configPath, data, 0644); err != nil {
+	if err := os.WriteFile(configPath, data, 0600); err != nil {
 		return fmt.Errorf("failed to write config file %s: %w", configPath, err)
 	}
 
 	return nil
 }
 
+// LoadCLIConfig loads configuration from the specified path
 func LoadCLIConfig(configPath string) (*CLIConfig, error) {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		// Create default config if file doesn't exist
@@ -158,7 +170,7 @@ func LoadCLIConfig(configPath string) (*CLIConfig, error) {
 		return config, nil
 	}
 
-	data, err := os.ReadFile(configPath)
+	data, err := os.ReadFile(filepath.Clean(configPath)) // #nosec G304
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file %s: %w", configPath, err)
 	}
@@ -178,6 +190,7 @@ func LoadCLIConfig(configPath string) (*CLIConfig, error) {
 	return &config, nil
 }
 
+// LoadDefaultCLIConfig loads configuration from the default location
 func LoadDefaultCLIConfig() (*CLIConfig, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -188,6 +201,7 @@ func LoadDefaultCLIConfig() (*CLIConfig, error) {
 	return LoadCLIConfig(configPath)
 }
 
+// Clone creates a deep copy of the CLIConfig
 func (c *CLIConfig) Clone() *CLIConfig {
 	return &CLIConfig{
 		DefaultCluster:   c.DefaultCluster,
@@ -202,6 +216,7 @@ func (c *CLIConfig) Clone() *CLIConfig {
 	}
 }
 
+// UpdateWebhookURL updates the webhook URL in the configuration and saves it
 func (c *CLIConfig) UpdateWebhookURL(webhookURL string) error {
 	if webhookURL != "" {
 		if err := ValidateWebhookURL(webhookURL); err != nil {
@@ -214,6 +229,7 @@ func (c *CLIConfig) UpdateWebhookURL(webhookURL string) error {
 	return nil
 }
 
+// UpdateDefaultResources updates the default resource limits in the configuration and saves it
 func (c *CLIConfig) UpdateDefaultResources(resources ResourceSpec) error {
 	if err := resources.Validate(); err != nil {
 		return fmt.Errorf("invalid resource specification: %w", err)
@@ -224,6 +240,7 @@ func (c *CLIConfig) UpdateDefaultResources(resources ResourceSpec) error {
 	return nil
 }
 
+// UpdateLogLevel updates the log level in the configuration and saves it
 func (c *CLIConfig) UpdateLogLevel(level string) error {
 	if !isValidLogLevel(level) {
 		return fmt.Errorf("invalid log level: %s (must be debug, info, warn, or error)", level)
@@ -234,6 +251,7 @@ func (c *CLIConfig) UpdateLogLevel(level string) error {
 	return nil
 }
 
+// GetEffectiveNamespace returns the namespace to use, preferring override over default
 func (c *CLIConfig) GetEffectiveNamespace(override string) string {
 	if override != "" {
 		return override
@@ -241,6 +259,7 @@ func (c *CLIConfig) GetEffectiveNamespace(override string) string {
 	return c.DefaultNamespace
 }
 
+// GetEffectiveResources returns the resource spec to use, preferring override over default
 func (c *CLIConfig) GetEffectiveResources(override *ResourceSpec) ResourceSpec {
 	if override != nil {
 		return *override
@@ -248,6 +267,7 @@ func (c *CLIConfig) GetEffectiveResources(override *ResourceSpec) ResourceSpec {
 	return c.DefaultResources
 }
 
+// GetEffectiveTTL returns the TTL to use, preferring override over default
 func (c *CLIConfig) GetEffectiveTTL(override time.Duration) time.Duration {
 	if override > 0 {
 		return override
@@ -255,6 +275,7 @@ func (c *CLIConfig) GetEffectiveTTL(override time.Duration) time.Duration {
 	return c.DefaultTTL
 }
 
+// GetEffectiveWebhookURL returns the webhook URL to use, preferring override over default
 func (c *CLIConfig) GetEffectiveWebhookURL(override string) string {
 	if override != "" {
 		return override
@@ -272,6 +293,7 @@ func isValidLogLevel(level string) bool {
 	return validLevels[level]
 }
 
+// GetValidLogLevels returns a list of all valid log levels
 func GetValidLogLevels() []string {
 	return []string{"debug", "info", "warn", "error"}
 }
