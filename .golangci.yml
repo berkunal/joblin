@@ -1,6 +1,8 @@
 # golangci-lint configuration for Joblin CLI
 # See: https://golangci-lint.run/usage/configuration/
 
+version: 2
+
 run:
   timeout: 5m
   issues-exit-code: 1
@@ -8,8 +10,7 @@ run:
   modules-download-mode: readonly
 
 output:
-  formats:
-    - format: colored-line-number
+  format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
   uniq-by-line: true
@@ -96,16 +97,12 @@ linters:
   enable:
     # Default linters
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
-    - typecheck
     - unused
 
     # Additional style linters
-    - gofmt
-    - goimports
     - revive
     - misspell
     - godot
@@ -181,9 +178,3 @@ issues:
 severity:
   default-severity: warning
   case-sensitive: false
-  rules:
-    - linters:
-        - errcheck
-        - govet
-        - staticcheck
-      severity: error

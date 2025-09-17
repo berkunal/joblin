@@ -83,7 +83,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.64.0
+          version: v2.4.0
           args: --config .golangci.yml
 
   # Security scanning
