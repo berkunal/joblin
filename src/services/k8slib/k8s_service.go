@@ -19,11 +19,12 @@ import (
 )
 
 const (
-	DefaultPythonImage  = "python:3.11-slim"
-	JoblinManagedLabel  = "app.kubernetes.io/managed-by"
-	JoblinNameLabel     = "app.kubernetes.io/name"
-	JoblinInstanceLabel = "app.kubernetes.io/instance"
-	JoblinManagedValue  = "joblin"
+	DefaultPythonImage    = "python:3.11-slim"
+	JoblinManagedLabel    = "app.kubernetes.io/managed-by"
+	JoblinNameLabel       = "app.kubernetes.io/name"
+	JoblinInstanceLabel   = "app.kubernetes.io/instance"
+	JoblinManagedValue    = "joblin"
+	PythonScriptContainer = "python-script"
 )
 
 type K8sService struct {
@@ -149,9 +150,9 @@ func (k *K8sService) buildKubernetesJob(job *models.Job, configMapName string) (
 	backoffLimit := int32(0)
 	ttlSecondsAfterFinished := int32(int(job.TTL.Seconds()))
 
-	initCommand := []string{
+	scriptCommand := []string{
 		"sh", "-c",
-		"if [ -f /app/requirements.txt ] && [ -s /app/requirements.txt ]; then pip install -r /app/requirements.txt; fi",
+		"if [ -f /app/requirements.txt ] && [ -s /app/requirements.txt ]; then pip install -r /app/requirements.txt; fi && python /app/script.py",
 	}
 
 	k8sJob := &batchv1.Job{
@@ -177,25 +178,11 @@ func (k *K8sService) buildKubernetesJob(job *models.Job, configMapName string) (
 				},
 				Spec: corev1.PodSpec{
 					RestartPolicy: corev1.RestartPolicyNever,
-					InitContainers: []corev1.Container{
-						{
-							Name:    "install-deps",
-							Image:   DefaultPythonImage,
-							Command: initCommand,
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "script-volume",
-									MountPath: "/app",
-								},
-							},
-							Resources: resourceRequirements,
-						},
-					},
 					Containers: []corev1.Container{
 						{
-							Name:    "python-script",
+							Name:    PythonScriptContainer,
 							Image:   DefaultPythonImage,
-							Command: []string{"python", "/app/script.py"},
+							Command: scriptCommand,
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "script-volume",
@@ -203,6 +190,7 @@ func (k *K8sService) buildKubernetesJob(job *models.Job, configMapName string) (
 								},
 							},
 							Resources: resourceRequirements,
+							Env:       buildEnvironmentVariables(job.EnvironmentVars),
 						},
 					},
 					Volumes: []corev1.Volume{
@@ -255,6 +243,22 @@ func (k *K8sService) buildResourceRequirements(spec models.ResourceSpec) corev1.
 	}
 
 	return requirements
+}
+
+func buildEnvironmentVariables(envVars map[string]string) []corev1.EnvVar {
+	if len(envVars) == 0 {
+		return nil
+	}
+
+	var envList []corev1.EnvVar
+	for key, value := range envVars {
+		envList = append(envList, corev1.EnvVar{
+			Name:  key,
+			Value: value,
+		})
+	}
+
+	return envList
 }
 
 func (k *K8sService) GetJobStatus(ctx context.Context, job *models.Job) (models.JobStatus, error) {
@@ -322,7 +326,7 @@ func (k *K8sService) GetJobLogs(ctx context.Context, job *models.Job, follow boo
 	pod := pods[0] // Get logs from first pod
 
 	req := k.clientset.CoreV1().Pods(job.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
-		Container: "python-script",
+		Container: PythonScriptContainer,
 		Follow:    follow,
 	})
 
@@ -384,7 +388,7 @@ func (k *K8sService) GetJobExitCode(ctx context.Context, job *models.Job) (*int,
 	pod := pods[0]
 
 	for _, containerStatus := range pod.Status.ContainerStatuses {
-		if containerStatus.Name == "python-script" {
+		if containerStatus.Name == PythonScriptContainer {
 			if containerStatus.State.Terminated != nil {
 				exitCode := int(containerStatus.State.Terminated.ExitCode)
 				return &exitCode, nil
