@@ -61,14 +61,14 @@ func TestResourceSpec_Validate_InvalidCPU(t *testing.T) {
 		expectedErr string
 	}{
 		{"empty_cpu", "", "CPU cannot be empty"},
-		{"invalid_format", "abc", "Invalid CPU format"},
+		{"invalid_format", "abc", "invalid CPU format"},
 		{"negative_cpu", "-100m", "CPU must be positive"},
 		{"zero_cpu", "0", "CPU must be positive"},
 		{"below_minimum", "5m", "CPU must be at least 10m"},
 		{"above_maximum", "17", "CPU cannot exceed 16 cores"},
-		{"invalid_unit", "100x", "Invalid CPU format"},
-		{"invalid_number", "1.2.3", "Invalid CPU format"},
-		{"special_chars", "100m@", "Invalid CPU format"},
+		{"invalid_unit", "100x", "invalid CPU format"},
+		{"invalid_number", "1.2.3", "invalid CPU format"},
+		{"special_chars", "100m@", "invalid CPU format"},
 	}
 
 	for _, tt := range invalidCPUSpecs {
@@ -93,14 +93,14 @@ func TestResourceSpec_Validate_InvalidMemory(t *testing.T) {
 		expectedErr string
 	}{
 		{"empty_memory", "", "memory cannot be empty"},
-		{"invalid_format", "xyz", "Invalid memory format"},
-		{"negative_memory", "-128Mi", "Memory must be positive"},
-		{"zero_memory", "0", "Memory must be positive"},
+		{"invalid_format", "xyz", "invalid memory format"},
+		{"negative_memory", "-128Mi", "memory must be positive"},
+		{"zero_memory", "0", "memory must be positive"},
 		{"below_minimum", "32Mi", "memory must be at least 64Mi"},
 		{"above_maximum", "64Gi", "memory cannot exceed 32Gi"},
-		{"invalid_unit", "128Mx", "Invalid memory format"},
-		{"invalid_number", "1.2.3Mi", "Invalid memory format"},
-		{"special_chars", "128Mi@", "Invalid memory format"},
+		{"invalid_unit", "128Mx", "invalid memory format"},
+		{"invalid_number", "1.2.3Mi", "invalid memory format"},
+		{"special_chars", "128Mi@", "invalid memory format"},
 	}
 
 	for _, tt := range invalidMemorySpecs {
