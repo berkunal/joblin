@@ -1,5 +1,7 @@
-# golangci-lint v1.x configuration for Joblin CLI
-# Configuration compatible with v1.55.2
+# golangci-lint v2.x configuration for Joblin CLI
+# Minimal configuration compatible with v2.x schema
+
+version: "2"
 
 severity:
   default: warning
