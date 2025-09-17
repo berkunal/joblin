@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/berkunal/joblin/src/lib"
 	"github.com/berkunal/joblin/src/models"
 	"github.com/berkunal/joblin/src/services/joblib"
 	"github.com/spf13/cobra"
@@ -97,7 +98,7 @@ func runDeploy(cmd *cobra.Command, args []string) error {
 	// Validate resource specifications if provided
 	if resources != nil {
 		if err := resources.Validate(); err != nil {
-			return err
+			return lib.NewValidationError("INVALID_RESOURCE_SPEC", "Invalid resource specifications").WithCause(err)
 		}
 	}
 

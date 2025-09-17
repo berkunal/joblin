@@ -33,6 +33,7 @@ type JoblinError struct {
 	HTTPStatus  int                    `json:"http_status,omitempty"`
 	Retryable   bool                   `json:"retryable"`
 	UserMessage string                 `json:"user_message,omitempty"`
+	ExitCode    int                    `json:"exit_code,omitempty"`
 }
 
 // Error implements the error interface

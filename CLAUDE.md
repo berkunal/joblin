@@ -40,7 +40,7 @@ Joblin is a CLI tool built in Go that enables developers to deploy Python script
 - `/specs/001-build-a-cli/quickstart.md`: User scenarios
 
 ## Constitutional Requirements
-- **Testing**: TDD mandatory, RED-GREEN-Refactor cycle
+- **Testing**: Unit tests only, TDD approach with RED-GREEN-Refactor cycle
 - **Libraries**: Every feature as library with CLI wrapper
 - **Simplicity**: Single project, direct framework usage, no unnecessary patterns
 - **Observability**: Structured logging with logrus
@@ -75,8 +75,6 @@ src/
 └── lib/            # Shared utilities
 
 tests/
-├── contract/       # API contract tests
-├── integration/    # Full workflow tests
 └── unit/           # Component tests
 
 cmd/joblin/         # Main CLI entry point

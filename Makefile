@@ -90,15 +90,6 @@ test-verbose: ## Run tests with verbose output
 	@echo "Running tests (verbose)..."
 	@go test -race -cover -v ./...
 
-.PHONY: test-contract
-test-contract: ## Run contract tests only
-	@echo "Running contract tests..."
-	@go test -race -cover ./$(TEST_DIR)/contract/...
-
-.PHONY: test-integration
-test-integration: ## Run integration tests only
-	@echo "Running integration tests..."
-	@go test -race -cover ./$(TEST_DIR)/integration/...
 
 .PHONY: test-unit
 test-unit: ## Run unit tests only

@@ -449,8 +449,6 @@ make build-all
 │   ├── models/          # Data models and validation
 │   └── lib/             # Shared utilities
 ├── tests/               # Test suites
-│   ├── contract/        # API contract tests
-│   ├── integration/     # Integration tests
 │   └── unit/            # Unit tests
 ├── specs/               # Feature specifications
 └── docs/                # Documentation
@@ -462,13 +460,11 @@ make build-all
 # Run all tests
 make test
 
-# Run specific test suites
+# Run unit tests
 make test-unit
-make test-integration
-make test-contract
 
 # Run tests with coverage
-make test-coverage
+make coverage
 ```
 
 ## Troubleshooting
