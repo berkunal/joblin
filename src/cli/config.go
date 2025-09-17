@@ -94,7 +94,9 @@ func runConfigView(cmd *cobra.Command, args []string) error {
 	config := cliContext.Config
 
 	if globalFlags.JSONOutput {
-		PrintJSON(config)
+		if err := PrintJSON(config); err != nil {
+			return fmt.Errorf("failed to print JSON output: %w", err)
+		}
 		return nil
 	}
 

@@ -195,9 +195,10 @@ func (js *JobService) UpdateJobStatus(ctx context.Context, jobID string) (*model
 					job.SetFailed(*exitCode)
 				}
 			} else {
-				if status == models.StatusCompleted {
+				switch status {
+				case models.StatusCompleted:
 					job.SetCompleted(0)
-				} else if status == models.StatusFailed {
+				case models.StatusFailed:
 					job.SetFailed(1)
 				}
 			}

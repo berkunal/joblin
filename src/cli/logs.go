@@ -64,7 +64,7 @@ func init() {
 	}
 
 	// Set up completion for the source flag
-	logsCmd.RegisterFlagCompletionFunc("source", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err := logsCmd.RegisterFlagCompletionFunc("source", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		sources := []string{"stdout", "stderr", "system", "all"}
 		var filtered []string
 		for _, source := range sources {
@@ -82,7 +82,10 @@ func init() {
 			}
 		}
 		return filtered, cobra.ShellCompDirectiveDefault
-	})
+	}); err != nil {
+		// Log error but don't fail the command setup
+		fmt.Printf("Warning: Failed to register completion for source flag: %v\n", err)
+	}
 }
 
 func runLogs(cmd *cobra.Command, args []string) error {
@@ -123,7 +126,11 @@ func showLogs(job *models.Job) error {
 	ctx := GetContext()
 	liveLogReader, err := cliContext.JobService.GetJobLogs(ctx, job.ID, false)
 	if err == nil {
-		defer liveLogReader.Close()
+		defer func() {
+			if closeErr := liveLogReader.Close(); closeErr != nil {
+				fmt.Printf("Warning: Failed to close live log reader: %v\n", closeErr)
+			}
+		}()
 		return displayLogsFromReader(liveLogReader, job.ID)
 	}
 
@@ -147,7 +154,11 @@ func followLogs(job *models.Job) error {
 	if err != nil {
 		return fmt.Errorf("failed to get job logs: %w", err)
 	}
-	defer logReader.Close()
+	defer func() {
+		if closeErr := logReader.Close(); closeErr != nil {
+			fmt.Printf("Warning: Failed to close log reader: %v\n", closeErr)
+		}
+	}()
 
 	return displayLogsFromReader(logReader, job.ID)
 }
@@ -325,7 +336,11 @@ func contains(slice []string, item string) bool {
 
 // saveLogFromReader saves logs from a reader to storage for future retrieval
 func saveLogFromReader(ctx context.Context, reader io.ReadCloser, jobID string) {
-	defer reader.Close()
+	defer func() {
+		if closeErr := reader.Close(); closeErr != nil {
+			fmt.Printf("Warning: Failed to close reader: %v\n", closeErr)
+		}
+	}()
 
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {

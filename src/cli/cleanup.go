@@ -162,7 +162,9 @@ func runNotificationCleanup() error {
 			"cleaned_notifications": cleanedNotifications,
 			"duration_seconds":      duration.Seconds(),
 		}
-		PrintJSON(result)
+		if err := PrintJSON(result); err != nil {
+			return fmt.Errorf("failed to print JSON result: %w", err)
+		}
 	} else {
 		fmt.Printf("✅ Notification cleanup completed!\n")
 		fmt.Printf("Cleaned up %d old notification records\n", cleanedNotifications)
@@ -192,7 +194,9 @@ func showCleanupPreview(jobsToCleanup []*jobInfo) error {
 				"jobs_to_cleanup": 0,
 				"message":         "No jobs found that meet cleanup criteria",
 			}
-			PrintJSON(result)
+			if err := PrintJSON(result); err != nil {
+				return fmt.Errorf("failed to print JSON result: %w", err)
+			}
 		} else {
 			fmt.Println("No jobs found that meet cleanup criteria.")
 		}
@@ -205,7 +209,9 @@ func showCleanupPreview(jobsToCleanup []*jobInfo) error {
 			"jobs_to_cleanup": len(jobsToCleanup),
 			"jobs":            jobsToCleanup,
 		}
-		PrintJSON(result)
+		if err := PrintJSON(result); err != nil {
+			return fmt.Errorf("failed to print JSON result: %w", err)
+		}
 		return nil
 	}
 
@@ -233,7 +239,9 @@ func performCleanup(ctx interface{}, jobsToCleanup []*jobInfo, startTime time.Ti
 				"message":          "No jobs to clean up",
 				"duration_seconds": time.Since(startTime).Seconds(),
 			}
-			PrintJSON(result)
+			if err := PrintJSON(result); err != nil {
+				return fmt.Errorf("failed to print JSON result: %w", err)
+			}
 		} else {
 			fmt.Println("No jobs to clean up.")
 		}
@@ -260,7 +268,9 @@ func performCleanup(ctx interface{}, jobsToCleanup []*jobInfo, startTime time.Ti
 			"cleaned_notifications": cleanedNotifications,
 			"duration_seconds":      duration.Seconds(),
 		}
-		PrintJSON(result)
+		if err := PrintJSON(result); err != nil {
+			return fmt.Errorf("failed to print JSON result: %w", err)
+		}
 	} else {
 		fmt.Printf("✅ Cleanup completed successfully!\n")
 		fmt.Printf("Cleaned up %d expired job(s)\n", cleanedJobs)

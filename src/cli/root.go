@@ -73,11 +73,21 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&globalFlags.LogLevel, "log-level", "", "log level (debug, info, warn, error)")
 
 	// Bind flags to viper
-	viper.BindPFlag("context", rootCmd.PersistentFlags().Lookup("context"))
-	viper.BindPFlag("namespace", rootCmd.PersistentFlags().Lookup("namespace"))
-	viper.BindPFlag("json", rootCmd.PersistentFlags().Lookup("json"))
-	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
-	viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
+	if err := viper.BindPFlag("context", rootCmd.PersistentFlags().Lookup("context")); err != nil {
+		fmt.Printf("Warning: Failed to bind context flag: %v\n", err)
+	}
+	if err := viper.BindPFlag("namespace", rootCmd.PersistentFlags().Lookup("namespace")); err != nil {
+		fmt.Printf("Warning: Failed to bind namespace flag: %v\n", err)
+	}
+	if err := viper.BindPFlag("json", rootCmd.PersistentFlags().Lookup("json")); err != nil {
+		fmt.Printf("Warning: Failed to bind json flag: %v\n", err)
+	}
+	if err := viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose")); err != nil {
+		fmt.Printf("Warning: Failed to bind verbose flag: %v\n", err)
+	}
+	if err := viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level")); err != nil {
+		fmt.Printf("Warning: Failed to bind log-level flag: %v\n", err)
+	}
 
 	// Add all subcommands
 	rootCmd.AddCommand(deployCmd)
@@ -90,8 +100,12 @@ func init() {
 	rootCmd.AddCommand(completionCmd)
 
 	// Register completion functions for global flags
-	rootCmd.RegisterFlagCompletionFunc("namespace", namespaceCompletion)
-	rootCmd.RegisterFlagCompletionFunc("log-level", logLevelCompletion)
+	if err := rootCmd.RegisterFlagCompletionFunc("namespace", namespaceCompletion); err != nil {
+		fmt.Printf("Warning: Failed to register completion for namespace flag: %v\n", err)
+	}
+	if err := rootCmd.RegisterFlagCompletionFunc("log-level", logLevelCompletion); err != nil {
+		fmt.Printf("Warning: Failed to register completion for log-level flag: %v\n", err)
+	}
 }
 
 func initConfig() {

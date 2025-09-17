@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/berkunal/joblin/src/lib"
 	"github.com/berkunal/joblin/src/models"
 	"github.com/berkunal/joblin/src/services/joblib"
 	"github.com/spf13/cobra"
@@ -55,10 +56,12 @@ func init() {
 	listCmd.Flags().BoolVarP(&listFlags.Wide, "wide", "w", false, "show additional columns")
 
 	// Set up completion for the status flag
-	listCmd.RegisterFlagCompletionFunc("status", jobStatusCompletion)
+	if err := listCmd.RegisterFlagCompletionFunc("status", jobStatusCompletion); err != nil {
+		lib.NewLogger("cli").Warnf("Failed to register completion for status flag: %v", err)
+	}
 
 	// Set up completion for the sort-by flag
-	listCmd.RegisterFlagCompletionFunc("sort-by", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err := listCmd.RegisterFlagCompletionFunc("sort-by", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		sortOptions := []string{"name", "status", "created", "started", "duration"}
 		var filtered []string
 		for _, option := range sortOptions {
@@ -78,7 +81,9 @@ func init() {
 			}
 		}
 		return filtered, cobra.ShellCompDirectiveDefault
-	})
+	}); err != nil {
+		lib.NewLogger("cli").Warnf("Failed to register completion for sort-by flag: %v", err)
+	}
 }
 
 func runList(cmd *cobra.Command, args []string) error {

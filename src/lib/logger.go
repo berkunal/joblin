@@ -68,7 +68,7 @@ func NewConsoleLogger(component string) *Logger {
 	logger := NewLogger(component)
 
 	// Use text formatter for console
-	logger.Logger.SetFormatter(&logrus.TextFormatter{
+	logger.SetFormatter(&logrus.TextFormatter{
 		DisableTimestamp: false,
 		FullTimestamp:    true,
 		TimestampFormat:  "2006-01-02 15:04:05",
@@ -239,14 +239,14 @@ func (l *Logger) SetLevel(level string) error {
 
 // SetJSONOutput enables JSON formatted output
 func (l *Logger) SetJSONOutput() {
-	l.Logger.SetFormatter(&logrus.JSONFormatter{
+	l.SetFormatter(&logrus.JSONFormatter{
 		TimestampFormat: "2006-01-02T15:04:05.000Z07:00",
 	})
 }
 
 // SetConsoleOutput enables human-readable console output
 func (l *Logger) SetConsoleOutput() {
-	l.Logger.SetFormatter(&logrus.TextFormatter{
+	l.SetFormatter(&logrus.TextFormatter{
 		DisableTimestamp: false,
 		FullTimestamp:    true,
 		TimestampFormat:  "2006-01-02 15:04:05",

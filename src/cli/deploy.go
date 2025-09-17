@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,7 +71,7 @@ func runDeploy(cmd *cobra.Command, args []string) error {
 	}
 
 	// Read script content
-	scriptContent, err := ioutil.ReadFile(scriptPath)
+	scriptContent, err := os.ReadFile(scriptPath)
 	if err != nil {
 		return fmt.Errorf("failed to read script file: %w", err)
 	}
@@ -229,7 +228,7 @@ func parseDependencies(scriptPath, requirementsFlag string) ([]string, error) {
 	requirementsPath := filepath.Join(scriptDir, "requirements.txt")
 
 	if _, err := os.Stat(requirementsPath); err == nil {
-		content, err := ioutil.ReadFile(requirementsPath)
+		content, err := os.ReadFile(requirementsPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read requirements.txt: %w", err)
 		}
