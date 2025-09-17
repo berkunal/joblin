@@ -85,6 +85,8 @@ jobs:
         with:
           version: v1.62.2
           args: --config .golangci.yml
+        env:
+          GOTOOLCHAIN: go1.23
 
   # Security scanning
   security:
