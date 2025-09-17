@@ -12,11 +12,11 @@ import (
 
 func TestNewJob_ValidInputs(t *testing.T) {
 	tests := []struct {
-		name         string
-		jobName      string
-		scriptPath   string
+		name          string
+		jobName       string
+		scriptPath    string
 		scriptContent []byte
-		dependencies []string
+		dependencies  []string
 	}{
 		{
 			name:          "simple_job",
@@ -468,14 +468,14 @@ func TestValidateJobName(t *testing.T) {
 	}
 
 	invalidNames := []string{
-		"",                           // empty
-		"Test",                       // uppercase
-		"test_job",                   // underscore
-		"test@job",                   // special character
-		"-test",                      // starts with hyphen
-		"test-",                      // ends with hyphen
-		"test job",                   // space
-		"test.job",                   // dot
+		"",         // empty
+		"Test",     // uppercase
+		"test_job", // underscore
+		"test@job", // special character
+		"-test",    // starts with hyphen
+		"test-",    // ends with hyphen
+		"test job", // space
+		"test.job", // dot
 		"a-b-c-d-e-f-g-h-i-j-k-l-m-n-o-p-q-r-s-t-u-v-w-x-y-z-0-1-2-3-4-5-6-7", // too long (64 chars)
 	}
 
