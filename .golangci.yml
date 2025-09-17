@@ -109,7 +109,6 @@ linters:
     - revive
     - misspell
     - godot
-    - shadow
 
     # Complexity linters
     - gocyclo
