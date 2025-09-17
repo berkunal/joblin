@@ -112,6 +112,23 @@ func runList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Update job statuses from Kubernetes for running jobs
+	ctx := GetContext()
+	for _, job := range jobs {
+		if !job.IsFinished() {
+			updatedJob, err := cliContext.JobService.UpdateJobStatus(ctx, job.ID)
+			if err != nil {
+				// Log error but continue with other jobs
+				if globalFlags.Verbose {
+					fmt.Printf("Warning: Failed to update status for job %s: %v\n", job.ID, err)
+				}
+				continue
+			}
+			// Update the job in the slice
+			*job = *updatedJob
+		}
+	}
+
 	// Sort jobs
 	sortJobs(jobs, listFlags.SortBy, listFlags.Reverse)
 
