@@ -91,7 +91,7 @@ sboms:
 # Docker images
 dockers:
   - id: joblin-docker
-    builds:
+    ids:
       - joblin
 
     image_templates:
@@ -114,7 +114,7 @@ dockers:
       - LICENSE
 
   - id: joblin-docker-arm64
-    builds:
+    ids:
       - joblin
 
     image_templates:
@@ -191,9 +191,6 @@ release:
 
   # Draft release
   draft: false
-
-  # Replace existing release
-  replace: false
 
   # Release name template
   name_template: "Joblin {{.Version}}"
