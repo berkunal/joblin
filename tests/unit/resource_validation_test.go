@@ -36,7 +36,7 @@ func TestResourceSpec_Validate_ValidSpecs(t *testing.T) {
 		{"fractional_cpu", "0.5", "256Mi", "1Gi"},
 		{"decimal_cpu", "1.5", "512Mi", "2Gi"},
 		{"bytes_memory", "100m", "134217728", "1073741824"}, // 128Mi and 1Gi in bytes
-		{"scientific_notation", "100m", "1e9", "1e10"},       // 1GB and 10GB
+		{"scientific_notation", "100m", "1e9", "1e10"},      // 1GB and 10GB
 	}
 
 	for _, tt := range validSpecs {
@@ -471,12 +471,12 @@ func TestResourceSpecValidation_BoundaryValues(t *testing.T) {
 			cpu   string
 			valid bool
 		}{
-			{"9m", false},   // Below minimum
-			{"10m", true},   // Exact minimum
-			{"11m", true},   // Above minimum
-			{"15999m", true}, // Below maximum (15.999 cores)
-			{"16", true},    // Exact maximum
-			{"16000m", true}, // Exact maximum in millicores
+			{"9m", false},     // Below minimum
+			{"10m", true},     // Exact minimum
+			{"11m", true},     // Above minimum
+			{"15999m", true},  // Below maximum (15.999 cores)
+			{"16", true},      // Exact maximum
+			{"16000m", true},  // Exact maximum in millicores
 			{"16001m", false}, // Above maximum
 		}
 
@@ -501,11 +501,11 @@ func TestResourceSpecValidation_BoundaryValues(t *testing.T) {
 			memory string
 			valid  bool
 		}{
-			{"63Mi", false},  // Below minimum
-			{"64Mi", true},   // Exact minimum
-			{"65Mi", true},   // Above minimum
-			{"32Gi", true},   // Exact maximum
-			{"33Gi", false},  // Above maximum
+			{"63Mi", false},   // Below minimum
+			{"64Mi", true},    // Exact minimum
+			{"65Mi", true},    // Above minimum
+			{"32Gi", true},    // Exact maximum
+			{"33Gi", false},   // Above maximum
 			{"32768Mi", true}, // 32Gi in Mi
 		}
 
@@ -553,3 +553,4 @@ func TestResourceSpecValidation_BoundaryValues(t *testing.T) {
 		}
 	})
 }
+
