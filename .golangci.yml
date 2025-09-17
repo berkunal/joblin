@@ -123,11 +123,10 @@ linters:
     - unparam
     - asciicheck
     - bodyclose
-    - exportloopref
+    - copyloopvar
 
     # Performance
     - prealloc
-    - maligned
 
     # Code quality
     - dupl

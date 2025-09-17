@@ -78,15 +78,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: ${{ env.GO_VERSION }}
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.62.2
+          version: v1.64.0
           args: --config .golangci.yml
-        env:
-          GOTOOLCHAIN: go1.23
 
   # Security scanning
   security:
