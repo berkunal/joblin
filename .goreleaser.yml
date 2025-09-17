@@ -71,10 +71,6 @@ archives:
     # Files to include in archive
     files:
       - README.md
-      - LICENSE
-      - CHANGELOG.md
-      - docs/*
-      - examples/*
 
 # Checksum
 checksum:
@@ -111,7 +107,6 @@ dockers:
 
     extra_files:
       - README.md
-      - LICENSE
 
   - id: joblin-docker-arm64
     ids:
