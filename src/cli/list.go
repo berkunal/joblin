@@ -63,26 +63,26 @@ func init() {
 	// Set up completion for the sort-by flag
 	if err := listCmd.RegisterFlagCompletionFunc("sort-by",
 		func(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		sortOptions := []string{"name", "status", "created", "started", "duration"}
-		var filtered []string
-		for _, option := range sortOptions {
-			if strings.HasPrefix(option, toComplete) {
-				switch option {
-				case "name":
-					filtered = append(filtered, option+"\tSort by job name")
-				case "status":
-					filtered = append(filtered, option+"\tSort by job status")
-				case "created":
-					filtered = append(filtered, option+"\tSort by creation time")
-				case "started":
-					filtered = append(filtered, option+"\tSort by start time")
-				case "duration":
-					filtered = append(filtered, option+"\tSort by job duration")
+			sortOptions := []string{"name", "status", "created", "started", "duration"}
+			var filtered []string
+			for _, option := range sortOptions {
+				if strings.HasPrefix(option, toComplete) {
+					switch option {
+					case "name":
+						filtered = append(filtered, option+"\tSort by job name")
+					case "status":
+						filtered = append(filtered, option+"\tSort by job status")
+					case "created":
+						filtered = append(filtered, option+"\tSort by creation time")
+					case "started":
+						filtered = append(filtered, option+"\tSort by start time")
+					case "duration":
+						filtered = append(filtered, option+"\tSort by job duration")
+					}
 				}
 			}
-		}
-		return filtered, cobra.ShellCompDirectiveDefault
-	}); err != nil {
+			return filtered, cobra.ShellCompDirectiveDefault
+		}); err != nil {
 		lib.NewLogger("cli").Warnf("Failed to register completion for sort-by flag: %v", err)
 	}
 }

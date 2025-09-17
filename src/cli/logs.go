@@ -67,24 +67,24 @@ func init() {
 	// Set up completion for the source flag
 	if err := logsCmd.RegisterFlagCompletionFunc("source",
 		func(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		sources := []string{"stdout", "stderr", "system", "all"}
-		var filtered []string
-		for _, source := range sources {
-			if strings.HasPrefix(source, toComplete) {
-				switch source {
-				case "stdout":
-					filtered = append(filtered, source+"\tStandard output from the Python script")
-				case "stderr":
-					filtered = append(filtered, source+"\tStandard error from the Python script")
-				case "system":
-					filtered = append(filtered, source+"\tKubernetes system messages")
-				case "all":
-					filtered = append(filtered, source+"\tAll log sources combined")
+			sources := []string{"stdout", "stderr", "system", "all"}
+			var filtered []string
+			for _, source := range sources {
+				if strings.HasPrefix(source, toComplete) {
+					switch source {
+					case "stdout":
+						filtered = append(filtered, source+"\tStandard output from the Python script")
+					case "stderr":
+						filtered = append(filtered, source+"\tStandard error from the Python script")
+					case "system":
+						filtered = append(filtered, source+"\tKubernetes system messages")
+					case "all":
+						filtered = append(filtered, source+"\tAll log sources combined")
+					}
 				}
 			}
-		}
-		return filtered, cobra.ShellCompDirectiveDefault
-	}); err != nil {
+			return filtered, cobra.ShellCompDirectiveDefault
+		}); err != nil {
 		// Log error but don't fail the command setup
 		fmt.Printf("Warning: Failed to register completion for source flag: %v\n", err)
 	}
@@ -335,4 +335,3 @@ func contains(slice []string, item string) bool {
 	}
 	return false
 }
-

@@ -21,15 +21,15 @@ import (
 
 const (
 	// DefaultPythonImage is the default Python Docker image used for jobs
-	DefaultPythonImage    = "python:3.11-slim"
+	DefaultPythonImage = "python:3.11-slim"
 	// JoblinManagedLabel is the Kubernetes label indicating management by Joblin
-	JoblinManagedLabel    = "app.kubernetes.io/managed-by"
+	JoblinManagedLabel = "app.kubernetes.io/managed-by"
 	// JoblinNameLabel is the Kubernetes label for application name
-	JoblinNameLabel       = "app.kubernetes.io/name"
+	JoblinNameLabel = "app.kubernetes.io/name"
 	// JoblinInstanceLabel is the Kubernetes label for application instance
-	JoblinInstanceLabel   = "app.kubernetes.io/instance"
+	JoblinInstanceLabel = "app.kubernetes.io/instance"
 	// JoblinManagedValue is the value for the managed-by label
-	JoblinManagedValue    = "joblin"
+	JoblinManagedValue = "joblin"
 	// PythonScriptContainer is the name of the container running Python scripts
 	PythonScriptContainer = "python-script"
 )

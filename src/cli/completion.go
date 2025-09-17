@@ -125,7 +125,6 @@ func jobStatusCompletion(_ *cobra.Command, _ []string, toComplete string) ([]str
 	return filtered, cobra.ShellCompDirectiveDefault
 }
 
-
 func init() {
 	// Note: The completion command will be added to rootCmd in root.go
 	// This init function is called before rootCmd is fully initialized

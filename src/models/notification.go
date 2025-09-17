@@ -17,9 +17,9 @@ type NotificationType string
 
 const (
 	// NotificationSuccess indicates a successful job completion
-	NotificationSuccess    NotificationType = "Success"
+	NotificationSuccess NotificationType = "Success"
 	// NotificationFailure indicates a failed job completion
-	NotificationFailure    NotificationType = "Failure"
+	NotificationFailure NotificationType = "Failure"
 	// NotificationTerminated indicates a job that was terminated before completion
 	NotificationTerminated NotificationType = "Terminated"
 )

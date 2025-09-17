@@ -14,7 +14,7 @@ import (
 
 const (
 	// AppName is the name of the CLI application
-	AppName    = "joblin"
+	AppName = "joblin"
 	// AppVersion is the current version of the CLI application
 	AppVersion = "0.1.0"
 )

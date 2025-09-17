@@ -16,13 +16,13 @@ import (
 
 const (
 	// DefaultTimeout is the default timeout for webhook HTTP requests
-	DefaultTimeout     = 30 * time.Second
+	DefaultTimeout = 30 * time.Second
 	// MaxRetryAttempts is the maximum number of retry attempts for failed notifications
-	MaxRetryAttempts   = 5
+	MaxRetryAttempts = 5
 	// RetryBackoffFactor is the exponential backoff factor for retry delays
 	RetryBackoffFactor = 2
 	// InitialRetryDelay is the initial delay before the first retry attempt
-	InitialRetryDelay  = 1 * time.Second
+	InitialRetryDelay = 1 * time.Second
 )
 
 // TeamsMessage represents a Microsoft Teams webhook message structure

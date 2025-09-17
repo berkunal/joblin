@@ -13,13 +13,13 @@ import (
 
 const (
 	// JobsBucket is the name of the BBolt bucket for storing job data
-	JobsBucket          = "jobs"
+	JobsBucket = "jobs"
 	// LogsBucket is the name of the BBolt bucket for storing job logs
-	LogsBucket          = "logs"
+	LogsBucket = "logs"
 	// NotificationsBucket is the name of the BBolt bucket for storing notification data
 	NotificationsBucket = "notifications"
 	// MetadataBucket is the name of the BBolt bucket for storing metadata
-	MetadataBucket      = "metadata"
+	MetadataBucket = "metadata"
 )
 
 // Service provides persistent storage operations using BBolt database

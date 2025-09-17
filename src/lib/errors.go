@@ -10,27 +10,27 @@ type ErrorType string
 
 const (
 	// ErrorTypeValidation indicates validation-related errors
-	ErrorTypeValidation    ErrorType = "validation"
+	ErrorTypeValidation ErrorType = "validation"
 	// ErrorTypeConfiguration indicates configuration-related errors
 	ErrorTypeConfiguration ErrorType = "configuration"
 	// ErrorTypeNetwork indicates network-related errors
-	ErrorTypeNetwork       ErrorType = "network"
+	ErrorTypeNetwork ErrorType = "network"
 	// ErrorTypeKubernetes indicates Kubernetes-related errors
-	ErrorTypeKubernetes    ErrorType = "kubernetes"
+	ErrorTypeKubernetes ErrorType = "kubernetes"
 	// ErrorTypeStorage indicates storage-related errors
-	ErrorTypeStorage       ErrorType = "storage"
+	ErrorTypeStorage ErrorType = "storage"
 	// ErrorTypeNotification indicates notification-related errors
-	ErrorTypeNotification  ErrorType = "notification"
+	ErrorTypeNotification ErrorType = "notification"
 	// ErrorTypeInternal indicates internal system errors
-	ErrorTypeInternal      ErrorType = "internal"
+	ErrorTypeInternal ErrorType = "internal"
 	// ErrorTypeNotFound indicates resource not found errors
-	ErrorTypeNotFound      ErrorType = "not_found"
+	ErrorTypeNotFound ErrorType = "not_found"
 	// ErrorTypeConflict indicates resource conflict errors
-	ErrorTypeConflict      ErrorType = "conflict"
+	ErrorTypeConflict ErrorType = "conflict"
 	// ErrorTypeTimeout indicates timeout-related errors
-	ErrorTypeTimeout       ErrorType = "timeout"
+	ErrorTypeTimeout ErrorType = "timeout"
 	// ErrorTypeUnauthorized indicates authentication/authorization errors
-	ErrorTypeUnauthorized  ErrorType = "unauthorized"
+	ErrorTypeUnauthorized ErrorType = "unauthorized"
 )
 
 // JoblinError represents a structured error with context

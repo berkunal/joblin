@@ -14,21 +14,21 @@ type LogContext string
 
 const (
 	// LogContextJobID is used to add job ID to log context
-	LogContextJobID       LogContext = "job_id"
+	LogContextJobID LogContext = "job_id"
 	// LogContextJobName is used to add job name to log context
-	LogContextJobName     LogContext = "job_name"
+	LogContextJobName LogContext = "job_name"
 	// LogContextNamespace is used to add namespace to log context
-	LogContextNamespace   LogContext = "namespace"
+	LogContextNamespace LogContext = "namespace"
 	// LogContextCluster is used to add cluster name to log context
-	LogContextCluster     LogContext = "cluster"
+	LogContextCluster LogContext = "cluster"
 	// LogContextOperation is used to add operation name to log context
-	LogContextOperation   LogContext = "operation"
+	LogContextOperation LogContext = "operation"
 	// LogContextComponent is used to add component name to log context
-	LogContextComponent   LogContext = "component"
+	LogContextComponent LogContext = "component"
 	// LogContextUserID is used to add user ID to log context
-	LogContextUserID      LogContext = "user_id"
+	LogContextUserID LogContext = "user_id"
 	// LogContextRequestID is used to add request ID to log context
-	LogContextRequestID   LogContext = "request_id"
+	LogContextRequestID LogContext = "request_id"
 	// LogContextCorrelation is used to add correlation ID to log context
 	LogContextCorrelation LogContext = "correlation_id"
 )

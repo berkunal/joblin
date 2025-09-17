@@ -10,17 +10,17 @@ type JobStatus string
 
 const (
 	// StatusPending indicates a job that has been created but not yet started
-	StatusPending    JobStatus = "Pending"
+	StatusPending JobStatus = "Pending"
 	// StatusRunning indicates a job that is currently executing
-	StatusRunning    JobStatus = "Running"
+	StatusRunning JobStatus = "Running"
 	// StatusCompleted indicates a job that has finished successfully
-	StatusCompleted  JobStatus = "Completed"
+	StatusCompleted JobStatus = "Completed"
 	// StatusFailed indicates a job that has failed to complete successfully
-	StatusFailed     JobStatus = "Failed"
+	StatusFailed JobStatus = "Failed"
 	// StatusTerminated indicates a job that was manually terminated
 	StatusTerminated JobStatus = "Terminated"
 	// StatusUnknown indicates a job with an unknown status
-	StatusUnknown    JobStatus = "Unknown"
+	StatusUnknown JobStatus = "Unknown"
 )
 
 var validStatuses = map[JobStatus]bool{
