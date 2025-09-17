@@ -256,33 +256,33 @@ chocolateys:
     api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
     source_repo: "https://push.chocolatey.org/"
 
-# Snapcraft (Linux package)
-snapcrafts:
-  - name: joblin
-
-    # Metadata
-    title: Joblin CLI
-    summary: CLI tool for deploying Python scripts to Kubernetes
-    description: |
-      Joblin is a powerful CLI tool that simplifies deploying and managing Python scripts
-      on Kubernetes clusters. It provides job lifecycle management, real-time monitoring,
-      log streaming, and Teams webhook notifications.
-
-    # Publishing
-    publish: true
-
-    # Grade and confinement
-    grade: stable
-    confinement: strict
-
-    # License
-    license: MIT
-
-    # Apps
-    apps:
-      joblin:
-        command: joblin
-        plugs: ["network", "home"]
+# Snapcraft (Linux package) - Disabled for now due to CI environment limitations
+# snapcrafts:
+#   - name: joblin
+#
+#     # Metadata
+#     title: Joblin CLI
+#     summary: CLI tool for deploying Python scripts to Kubernetes
+#     description: |
+#       Joblin is a powerful CLI tool that simplifies deploying and managing Python scripts
+#       on Kubernetes clusters. It provides job lifecycle management, real-time monitoring,
+#       log streaming, and Teams webhook notifications.
+#
+#     # Publishing
+#     publish: true
+#
+#     # Grade and confinement
+#     grade: stable
+#     confinement: strict
+#
+#     # License
+#     license: MIT
+#
+#     # Apps
+#     apps:
+#       joblin:
+#         command: joblin
+#         plugs: ["network", "home"]
 
 # Announcement
 announce:
