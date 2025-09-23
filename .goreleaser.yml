@@ -103,15 +103,18 @@ release:
     ## Installation
 
     ### Binary Installation
-    ```bash
-    # Linux/macOS
-    curl -LO https://github.com/berkunal/joblin/releases/download/{{ .Tag }}/joblin_{{ .Os }}_{{ .Arch }}.tar.gz
-    tar xzf joblin_{{ .Os }}_{{ .Arch }}.tar.gz
-    sudo mv joblin /usr/local/bin/
+    Download the appropriate binary for your platform from the [releases page](https://github.com/berkunal/joblin/releases/latest):
 
-    # Windows
-    # Download joblin_Windows_x86_64.zip from releases page
+    **Linux/macOS:**
+    ```bash
+    # Replace OS and ARCH with your platform (e.g., Linux_x86_64, Darwin_arm64)
+    curl -LO https://github.com/berkunal/joblin/releases/download/{{ .Tag }}/joblin_OS_ARCH.tar.gz
+    tar xzf joblin_OS_ARCH.tar.gz
+    sudo mv joblin /usr/local/bin/
     ```
+
+    **Windows:**
+    Download `joblin_Windows_x86_64.zip` from the releases page.
 
     ### Go Install
     ```bash
