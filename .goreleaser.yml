@@ -137,29 +137,6 @@ release:
   name_template: "Joblin {{.Version}}"
 
 
-# Chocolatey (Windows package manager)
-chocolateys:
-  - name: joblin
-
-    # Package info
-    title: Joblin CLI
-    authors: berkunal
-    project_url: https://github.com/berkunal/joblin
-    url_template: "https://github.com/berkunal/joblin/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-    copyright: 2025 berkunal
-    license_url: https://github.com/berkunal/joblin/blob/main/LICENSE
-    require_license_acceptance: false
-    project_source_url: https://github.com/berkunal/joblin
-    docs_url: https://github.com/berkunal/joblin/blob/main/README.md
-    bug_tracker_url: https://github.com/berkunal/joblin/issues
-    tags: "kubernetes cli python devops"
-    summary: "CLI tool for deploying Python scripts to Kubernetes"
-    description: |
-      Joblin is a CLI tool that enables developers to deploy Python scripts to Kubernetes clusters easily.
-      Features include job lifecycle management, real-time monitoring, log streaming, and Teams webhook notifications.
-    release_notes: "https://github.com/berkunal/joblin/releases/tag/v{{ .Version }}"
-    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
-    source_repo: "https://push.chocolatey.org/"
 
 # Snapcraft (Linux package) - Disabled for now due to CI environment limitations
 # snapcrafts:
